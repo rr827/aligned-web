@@ -241,9 +241,9 @@ export default function OverlapPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-          <div className="w-6 h-6 border-2 border-[#c8f97a] border-t-transparent rounded-full animate-spin" />
-        </div>
+        <main className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+          <div className="w-10 h-10 border-2 border-[#c8f97a]/30 border-t-[#c8f97a] rounded-full animate-spin"></div>
+        </main>
       }
     >
       <OverlapContent />
