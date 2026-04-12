@@ -11,6 +11,15 @@ const SCOPES = [
 const TOKEN_KEY = 'aligned_token';
 const TOKEN_EXPIRY_KEY = 'aligned_token_expiry';
 
+function getCookie(name: string): string | null {
+  const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+function deleteCookie(name: string): void {
+  document.cookie = `${name}=; path=/; max-age=0`;
+}
+
 function getRedirectUri(): string {
   return `${window.location.origin}/auth/callback`;
 }
@@ -90,14 +99,37 @@ export function saveToken(accessToken: string, expiresIn: number): void {
 }
 
 export function loadToken(): string | null {
+  // Check localStorage first
   const token = localStorage.getItem(TOKEN_KEY);
   const expiry = localStorage.getItem(TOKEN_EXPIRY_KEY);
-  if (!token || !expiry) return null;
-  if (Date.now() > Number(expiry) - 5 * 60 * 1000) {
-    clearToken();
-    return null;
+
+  if (token && expiry) {
+    if (Date.now() > Number(expiry) - 5 * 60 * 1000) {
+      clearToken();
+      return null;
+    }
+    return token;
   }
-  return token;
+
+  // Fall back to cookies set by server-side OAuth callback
+  const cookieToken = getCookie(TOKEN_KEY);
+  const cookieExpiry = getCookie(TOKEN_EXPIRY_KEY);
+
+  if (cookieToken && cookieExpiry) {
+    // Sync to localStorage and clear cookies
+    localStorage.setItem(TOKEN_KEY, cookieToken);
+    localStorage.setItem(TOKEN_EXPIRY_KEY, cookieExpiry);
+    deleteCookie(TOKEN_KEY);
+    deleteCookie(TOKEN_EXPIRY_KEY);
+
+    if (Date.now() > Number(cookieExpiry) - 5 * 60 * 1000) {
+      clearToken();
+      return null;
+    }
+    return cookieToken;
+  }
+
+  return null;
 }
 
 export function clearToken(): void {
