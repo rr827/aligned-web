@@ -5,7 +5,7 @@ export default function Home() {
       {/* Nav */}
       <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, borderBottom: '1px solid rgba(255,255,255,0.05)', backgroundColor: 'rgba(10,10,10,0.8)', backdropFilter: 'blur(12px)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 48px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 24, fontWeight: 300, letterSpacing: '-0.05em' }}>aligned</span>
+          <span style={{ fontSize: 32, fontWeight: 300, letterSpacing: '-0.08em' }}>aligned</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
             <a href="#how" style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>How it works</a>
             <a href="#privacy" style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>Privacy</a>
@@ -72,7 +72,7 @@ export default function Home() {
       <section id="how" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '96px 0' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 48px' }}>
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 16 }}>How it works</p>
-          <h2 style={{ fontSize: 40, fontWeight: 300, letterSpacing: '-0.02em', marginBottom: 64 }}>Four steps, zero friction.</h2>
+          <h2 style={{ fontSize: 56, fontWeight: 300, letterSpacing: '-0.02em', marginBottom: 64 }}>Four steps, zero friction.</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 32 }}>
             {[
               { num: '01', title: 'Connect your calendar', body: 'Link Google Calendar with one tap. We read your events to find free windows.' },
@@ -81,9 +81,9 @@ export default function Home() {
               { num: '04', title: 'Book the session', body: 'Pick a mutual free window and it gets added to both Google Calendars.' },
             ].map((step) => (
               <div key={step.num} style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 24 }}>
-                <span style={{ fontSize: 11, color: '#c8f97a', fontWeight: 600, letterSpacing: '0.15em', display: 'block', marginBottom: 16 }}>{step.num}</span>
-                <h3 style={{ fontSize: 17, fontWeight: 500, marginBottom: 12 }}>{step.title}</h3>
-                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', lineHeight: 1.6 }}>{step.body}</p>
+                <span style={{ fontSize: 13, color: '#c8f97a', fontWeight: 600, letterSpacing: '0.15em', display: 'block', marginBottom: 16 }}>{step.num}</span>
+                <h3 style={{ fontSize: 22, fontWeight: 500, marginBottom: 12 }}>{step.title}</h3>
+                <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.4)', lineHeight: 1.7 }}>{step.body}</p>
               </div>
             ))}
           </div>
@@ -95,12 +95,12 @@ export default function Home() {
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 48px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 96, alignItems: 'center' }}>
           <div>
             <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 16 }}>Privacy first</p>
-            <h2 style={{ fontSize: 40, fontWeight: 300, letterSpacing: '-0.02em', marginBottom: 24 }}>Your calendar details never leave your device.</h2>
-            <p style={{ color: 'rgba(255,255,255,0.4)', lineHeight: 1.7, marginBottom: 32 }}>
-              Aligned strips every event down to just a start and end time before anything is shared. No titles, no descriptions, no attendees.
+            <h2 style={{ fontSize: 52, fontWeight: 300, letterSpacing: '-0.02em', marginBottom: 24 }}>What you share is what you choose.</h2>
+            <p style={{ fontSize: 17, color: 'rgba(255,255,255,0.4)', lineHeight: 1.8, marginBottom: 32 }}>
+              Every event gets stripped to a start time and end time. Nothing else. No names, no meetings, no context. Just blocks of time.
             </p>
             {['No account or sign-up required', 'Event details stay on your device', 'Nothing stored on our servers', 'Availability links are snapshots only'].map((item) => (
-              <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 14, color: 'rgba(255,255,255,0.6)', marginBottom: 16 }}>
+              <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 16, color: 'rgba(255,255,255,0.6)', marginBottom: 16 }}>
                 <span style={{ color: '#c8f97a', fontSize: 16 }}>✓</span>
                 {item}
               </div>
