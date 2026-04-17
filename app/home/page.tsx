@@ -308,6 +308,19 @@ export default function HomePage() {
         {/* Side panel */}
         <div style={{ width: 288, borderLeft: '1px solid #e2e2dc', display: 'flex', flexDirection: 'column', overflowY: 'auto', flexShrink: 0 }}>
 
+          {/* Share */}
+          <div style={{ padding: '16px 22px', borderBottom: '1px solid #e2e2dc' }}>
+            {!loading && (
+              <p style={{ fontSize: 10, color: '#aaa', textAlign: 'center', marginBottom: 8 }}>
+                {blocks.length === 0 ? 'No events loaded' : `${blocks.length} events across 14 days`}
+              </p>
+            )}
+            <button onClick={handleShare} disabled={loading || blocks.length === 0}
+              style={{ width: '100%', backgroundColor: '#4a8000', color: '#fff', borderRadius: 11, padding: '13px', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer', opacity: loading || blocks.length === 0 ? 0.4 : 1 }}>
+              {copied ? 'Link copied!' : 'Share my availability'}
+            </button>
+          </div>
+
           {/* Free windows */}
           <div style={{ padding: '22px 22px 18px' }}>
             <p style={{ fontSize: 10, color: '#555', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 13 }}>
@@ -373,19 +386,6 @@ export default function HomePage() {
           </div>
 
           <div style={{ flex: 1 }} />
-
-          {/* Share */}
-          <div style={{ padding: '14px 22px 22px', borderTop: '1px solid #e2e2dc' }}>
-            {!loading && (
-              <p style={{ fontSize: 10, color: '#d8d8d2', textAlign: 'center', marginBottom: 10 }}>
-                {blocks.length === 0 ? 'No events loaded' : `${blocks.length} events across 14 days`}
-              </p>
-            )}
-            <button onClick={handleShare} disabled={loading || blocks.length === 0}
-              style={{ width: '100%', backgroundColor: '#4a8000', color: '#fff', borderRadius: 11, padding: '13px', fontSize: 13, fontWeight: 600, color: '#f5f5f0', border: 'none', cursor: 'pointer', opacity: loading || blocks.length === 0 ? 0.4 : 1 }}>
-              {copied ? 'Link copied!' : 'Share my availability'}
-            </button>
-          </div>
         </div>
       </div>
 
