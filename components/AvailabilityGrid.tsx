@@ -35,7 +35,7 @@ export default function AvailabilityGrid({ dates, myBlocks, theirBlocks }: Props
       <div style={{ width: 44, flexShrink: 0 }}>
         {hours.map(h => (
           <div key={h} style={{ height: HOUR_HEIGHT, paddingTop: 4 }}>
-            <span style={{ fontSize: 11, color: '#2e2e2e' }}>
+            <span style={{ fontSize: 11, color: '#555' }}>
               {format(new Date().setHours(h, 0, 0, 0), 'h a')}
             </span>
           </div>
@@ -54,19 +54,19 @@ export default function AvailabilityGrid({ dates, myBlocks, theirBlocks }: Props
         const isToday = isSameDay(date, new Date());
 
         return (
-          <div key={dateStr} style={{ flex: 1, position: 'relative', height: TIMELINE_HEIGHT, borderLeft: di > 0 ? '1px solid #0f0f0f' : 'none' }}>
+          <div key={dateStr} style={{ flex: 1, position: 'relative', height: TIMELINE_HEIGHT, borderLeft: di > 0 ? '1px solid #e2e2dc' : 'none' }}>
             {/* Hour grid lines */}
             {hours.map(h => (
               <div key={h} style={{
                 position: 'absolute', left: 0, right: 0,
                 top: (h - HOURS_START) * HOUR_HEIGHT,
-                height: 1, backgroundColor: '#111', pointerEvents: 'none',
+                height: 1, backgroundColor: '#e8e8e2', pointerEvents: 'none',
               }} />
             ))}
 
             {/* Today tint */}
             {isToday && (
-              <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(200,249,122,0.015)', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(74,128,0,0.05)', pointerEvents: 'none' }} />
             )}
 
             {/* My blocks — left half when split, full when solo */}
@@ -78,7 +78,7 @@ export default function AvailabilityGrid({ dates, myBlocks, theirBlocks }: Props
                   left: 3,
                   right: hasThem ? '50%' : 3,
                   top, height,
-                  backgroundColor: '#9b1d4f',
+                  backgroundColor: '#e05a8a',
                   border: '1px solid rgba(200,53,120,0.35)',
                   borderRadius: 4,
                 }} />
@@ -94,7 +94,7 @@ export default function AvailabilityGrid({ dates, myBlocks, theirBlocks }: Props
                   left: '50%',
                   right: 3,
                   top, height,
-                  backgroundColor: '#1a5276',
+                  backgroundColor: '#3a8bc8',
                   border: '1px solid rgba(52,152,219,0.3)',
                   borderRadius: 4,
                 }} />

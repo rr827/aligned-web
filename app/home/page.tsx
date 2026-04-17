@@ -125,14 +125,14 @@ export default function HomePage() {
   const freeGaps = getFreeGaps(selectedDate, blocks, theirBlocks ?? undefined);
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0a0a', display: 'flex', flexDirection: 'column', fontFamily: 'system-ui, sans-serif', color: 'white' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f0', display: 'flex', flexDirection: 'column', fontFamily: 'system-ui, sans-serif', color: '#111' }}>
 
       {/* Header */}
-      <div style={{ borderBottom: '1px solid #111', padding: '0 32px', height: 54, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, gap: 16 }}>
+      <div style={{ borderBottom: '1px solid #e2e2dc', padding: '0 32px', height: 54, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, gap: 16 }}>
         <span style={{ fontSize: 21, fontWeight: 300, letterSpacing: '-0.06em', flexShrink: 0 }}>aligned</span>
 
         {/* View mode tabs */}
-        <div style={{ display: 'flex', gap: 2, backgroundColor: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: 9, padding: 3 }}>
+        <div style={{ display: 'flex', gap: 2, backgroundColor: '#ffffff', border: '1px solid #1a1a1a', borderRadius: 9, padding: 3 }}>
           {(['day', 'workWeek', 'week'] as ViewMode[]).map(mode => (
             <button key={mode} onClick={() => {
               setViewMode(mode);
@@ -140,8 +140,8 @@ export default function HomePage() {
               if (mode === 'week') setActiveFilters(ALL_DAYS);
             }}
               style={{ padding: '5px 14px', borderRadius: 6, fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer', transition: 'all 0.1s',
-                backgroundColor: viewMode === mode ? '#1e1e1e' : 'transparent',
-                color: viewMode === mode ? '#ddd' : '#3a3a3a' }}>
+                backgroundColor: viewMode === mode ? '#d8d8d2' : 'transparent',
+                color: viewMode === mode ? '#0a0a0a' : '#555' }}>
               {mode === 'day' ? 'Day' : mode === 'workWeek' ? 'Work Week' : 'Week'}
             </button>
           ))}
@@ -150,13 +150,13 @@ export default function HomePage() {
         {/* Filter toggle (week modes only) */}
         {viewMode !== 'day' && (
           <button onClick={() => setShowFilter(v => !v)}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 7, border: `1px solid ${showFilter ? '#c8f97a' : '#1a1a1a'}`, background: showFilter ? 'rgba(200,249,122,0.06)' : '#0d0d0d', color: showFilter ? '#c8f97a' : '#3a3a3a', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}>
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 7, border: `1px solid ${showFilter ? '#4a8000' : '#dededa'}`, background: showFilter ? 'rgba(74,128,0,0.08)' : '#ffffff', color: showFilter ? '#4a8000' : '#555', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}>
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path d="M1 2h10M3 6h6M5 10h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
             Filter days
             {activeFilters.length < ALL_DAYS.length && (
-              <span style={{ backgroundColor: '#c8f97a', color: '#0a0a0a', borderRadius: 999, padding: '1px 6px', fontSize: 10, fontWeight: 700 }}>
+              <span style={{ backgroundColor: '#4a8000', color: '#f5f5f0', borderRadius: 999, padding: '1px 6px', fontSize: 10, fontWeight: 700 }}>
                 {activeFilters.length}
               </span>
             )}
@@ -165,29 +165,29 @@ export default function HomePage() {
 
         <div style={{ flex: 1 }} />
 
-        <span style={{ fontSize: 13, color: '#2e2e2e', flexShrink: 0 }}>{format(new Date(), 'MMMM yyyy')}</span>
+        <span style={{ fontSize: 13, color: '#555', flexShrink: 0 }}>{format(new Date(), 'MMMM yyyy')}</span>
         <button onClick={() => { if (confirm('Disconnect your Google Calendar?')) { clearToken(); router.replace('/'); } }}
-          style={{ fontSize: 13, color: '#2a2a2a', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}>
+          style={{ fontSize: 13, color: '#777', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}>
           Disconnect
         </button>
       </div>
 
       {/* Filter panel */}
       {showFilter && viewMode !== 'day' && (
-        <div style={{ borderBottom: '1px solid #111', padding: '12px 32px', display: 'flex', alignItems: 'center', gap: 10, backgroundColor: '#080808', flexShrink: 0 }}>
-          <span style={{ fontSize: 11, color: '#3a3a3a', textTransform: 'uppercase', letterSpacing: '0.12em', marginRight: 4 }}>Show</span>
+        <div style={{ borderBottom: '1px solid #e2e2dc', padding: '12px 32px', display: 'flex', alignItems: 'center', gap: 10, backgroundColor: '#080808', flexShrink: 0 }}>
+          <span style={{ fontSize: 11, color: '#555', textTransform: 'uppercase', letterSpacing: '0.12em', marginRight: 4 }}>Show</span>
           <button onClick={() => applyPreset('workWeek')}
-            style={{ padding: '4px 11px', borderRadius: 6, fontSize: 12, border: `1px solid ${JSON.stringify(activeFilters) === JSON.stringify(WORK_DAYS) ? '#c8f97a' : '#1e1e1e'}`, background: JSON.stringify(activeFilters) === JSON.stringify(WORK_DAYS) ? 'rgba(200,249,122,0.06)' : '#0f0f0f', color: JSON.stringify(activeFilters) === JSON.stringify(WORK_DAYS) ? '#c8f97a' : '#444', cursor: 'pointer' }}>
+            style={{ padding: '4px 11px', borderRadius: 6, fontSize: 12, border: `1px solid ${JSON.stringify(activeFilters) === JSON.stringify(WORK_DAYS) ? '#4a8000' : '#d8d8d2'}`, background: JSON.stringify(activeFilters) === JSON.stringify(WORK_DAYS) ? 'rgba(74,128,0,0.08)' : '#fafaf7', color: JSON.stringify(activeFilters) === JSON.stringify(WORK_DAYS) ? '#4a8000' : '#777', cursor: 'pointer' }}>
             Work week
           </button>
           <button onClick={() => applyPreset('all')}
-            style={{ padding: '4px 11px', borderRadius: 6, fontSize: 12, border: `1px solid ${JSON.stringify(activeFilters) === JSON.stringify(ALL_DAYS) ? '#c8f97a' : '#1e1e1e'}`, background: JSON.stringify(activeFilters) === JSON.stringify(ALL_DAYS) ? 'rgba(200,249,122,0.06)' : '#0f0f0f', color: JSON.stringify(activeFilters) === JSON.stringify(ALL_DAYS) ? '#c8f97a' : '#444', cursor: 'pointer' }}>
+            style={{ padding: '4px 11px', borderRadius: 6, fontSize: 12, border: `1px solid ${JSON.stringify(activeFilters) === JSON.stringify(ALL_DAYS) ? '#4a8000' : '#d8d8d2'}`, background: JSON.stringify(activeFilters) === JSON.stringify(ALL_DAYS) ? 'rgba(74,128,0,0.08)' : '#fafaf7', color: JSON.stringify(activeFilters) === JSON.stringify(ALL_DAYS) ? '#4a8000' : '#777', cursor: 'pointer' }}>
             Full week
           </button>
-          <div style={{ width: 1, height: 16, backgroundColor: '#1a1a1a', margin: '0 4px' }} />
+          <div style={{ width: 1, height: 16, backgroundColor: '#dededa', margin: '0 4px' }} />
           {ALL_DAYS.map(day => (
             <button key={day} onClick={() => toggleDayFilter(day)}
-              style={{ width: 36, height: 28, borderRadius: 6, fontSize: 11, fontWeight: 500, border: `1px solid ${activeFilters.includes(day) ? '#c8f97a' : '#1a1a1a'}`, background: activeFilters.includes(day) ? 'rgba(200,249,122,0.08)' : '#0f0f0f', color: activeFilters.includes(day) ? '#c8f97a' : '#333', cursor: 'pointer' }}>
+              style={{ width: 36, height: 28, borderRadius: 6, fontSize: 11, fontWeight: 500, border: `1px solid ${activeFilters.includes(day) ? '#4a8000' : '#dededa'}`, background: activeFilters.includes(day) ? 'rgba(74,128,0,0.1)' : '#fafaf7', color: activeFilters.includes(day) ? '#4a8000' : '#555', cursor: 'pointer' }}>
               {day}
             </button>
           ))}
@@ -196,17 +196,17 @@ export default function HomePage() {
 
       {/* Date navigation bar */}
       {viewMode === 'day' ? (
-        <div style={{ borderBottom: '1px solid #111', padding: '10px 32px', display: 'flex', gap: 6, overflowX: 'auto', flexShrink: 0 }}>
+        <div style={{ borderBottom: '1px solid #e2e2dc', padding: '10px 32px', display: 'flex', gap: 6, overflowX: 'auto', flexShrink: 0 }}>
           {dayStripDates.map(date => {
             const active = format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
             const isToday = isSameDay(date, new Date());
             return (
               <button key={date.toISOString()} onClick={() => setSelectedDate(date)}
-                style={{ flexShrink: 0, width: 52, padding: '7px 0', borderRadius: 11, display: 'flex', flexDirection: 'column', alignItems: 'center', border: `1px solid ${active ? '#c8f97a' : '#1a1a1a'}`, background: active ? 'rgba(200,249,122,0.06)' : '#0d0d0d', cursor: 'pointer' }}>
-                <span style={{ fontSize: 9, color: active ? '#c8f97a' : '#333', marginBottom: 3, letterSpacing: '0.08em' }}>
+                style={{ flexShrink: 0, width: 52, padding: '7px 0', borderRadius: 11, display: 'flex', flexDirection: 'column', alignItems: 'center', border: `1px solid ${active ? '#4a8000' : '#dededa'}`, background: active ? 'rgba(74,128,0,0.08)' : '#ffffff', cursor: 'pointer' }}>
+                <span style={{ fontSize: 9, color: active ? '#4a8000' : '#555', marginBottom: 3, letterSpacing: '0.08em' }}>
                   {format(date, 'EEE').toUpperCase()}
                 </span>
-                <span style={{ fontSize: 17, fontWeight: 600, color: active ? '#c8f97a' : isToday ? '#888' : '#2e2e2e' }}>
+                <span style={{ fontSize: 17, fontWeight: 600, color: active ? '#4a8000' : isToday ? '#444' : '#555' }}>
                   {format(date, 'd')}
                 </span>
               </button>
@@ -214,16 +214,16 @@ export default function HomePage() {
           })}
         </div>
       ) : (
-        <div style={{ borderBottom: '1px solid #111', padding: '10px 32px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+        <div style={{ borderBottom: '1px solid #e2e2dc', padding: '10px 32px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
           <button onClick={() => navigateWeek(-1)}
-            style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid #1a1a1a', background: '#0d0d0d', color: '#444', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
+            style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid #1a1a1a', background: '#ffffff', color: '#777', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
           <span style={{ fontSize: 13, color: '#555', minWidth: 180 }}>
             {format(weekDates[0], 'MMM d')} – {format(weekDates[6], 'MMM d, yyyy')}
           </span>
           <button onClick={() => navigateWeek(1)}
-            style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid #1a1a1a', background: '#0d0d0d', color: '#444', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>→</button>
+            style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid #1a1a1a', background: '#ffffff', color: '#777', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>→</button>
           <button onClick={() => setSelectedDate(new Date())}
-            style={{ fontSize: 12, color: '#3a3a3a', background: 'none', border: '1px solid #1a1a1a', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>
+            style={{ fontSize: 12, color: '#555', background: 'none', border: '1px solid #1a1a1a', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>
             Today
           </button>
           {visibleDates.length === 0 && (
@@ -240,7 +240,7 @@ export default function HomePage() {
 
           {/* Multi-day column headers */}
           {viewMode !== 'day' && visibleDates.length > 0 && (
-            <div style={{ display: 'flex', borderBottom: '1px solid #111', padding: '0 0 0 32px', position: 'sticky', top: 0, backgroundColor: '#0a0a0a', zIndex: 10 }}>
+            <div style={{ display: 'flex', borderBottom: '1px solid #e2e2dc', padding: '0 0 0 32px', position: 'sticky', top: 0, backgroundColor: '#f5f5f0', zIndex: 10 }}>
               <div style={{ width: 44, flexShrink: 0 }} />
               {visibleDates.map((date, di) => {
                 const isToday = isSameDay(date, new Date());
@@ -248,11 +248,11 @@ export default function HomePage() {
                 return (
                   <div key={date.toISOString()} onClick={() => { setSelectedDate(date); setViewMode('day'); }}
                     style={{ flex: 1, padding: '10px 6px', textAlign: 'center', cursor: 'pointer', borderLeft: di > 0 ? '1px solid #111' : 'none' }}>
-                    <div style={{ fontSize: 9, color: '#2e2e2e', letterSpacing: '0.1em', marginBottom: 5 }}>
+                    <div style={{ fontSize: 9, color: '#555', letterSpacing: '0.1em', marginBottom: 5 }}>
                       {format(date, 'EEE').toUpperCase()}
                     </div>
-                    <div style={{ width: 26, height: 26, borderRadius: '50%', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: isToday ? '#c8f97a' : isSelected ? '#1e1e1e' : 'transparent' }}>
-                      <span style={{ fontSize: 14, fontWeight: 500, color: isToday ? '#0a0a0a' : isSelected ? '#aaa' : '#3a3a3a' }}>
+                    <div style={{ width: 26, height: 26, borderRadius: '50%', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: isToday ? '#4a8000' : isSelected ? '#d8d8d2' : 'transparent' }}>
+                      <span style={{ fontSize: 14, fontWeight: 500, color: isToday ? '#f5f5f0' : isSelected ? '#222' : '#555' }}>
                         {format(date, 'd')}
                       </span>
                     </div>
@@ -264,7 +264,7 @@ export default function HomePage() {
 
           {viewMode === 'day' && (
             <div style={{ padding: '18px 32px 14px' }}>
-              <p style={{ fontSize: 16, fontWeight: 500, color: 'white' }}>
+              <p style={{ fontSize: 16, fontWeight: 500, color: '#111' }}>
                 {format(selectedDate, 'EEEE, MMMM d')}
               </p>
             </div>
@@ -273,16 +273,16 @@ export default function HomePage() {
           {loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 80, gap: 12 }}>
               <div style={{ width: 20, height: 20, border: '2px solid #c8f97a', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-              <p style={{ fontSize: 13, color: '#444' }}>Reading your calendar...</p>
+              <p style={{ fontSize: 13, color: '#777' }}>Reading your calendar...</p>
             </div>
           ) : error ? (
-            <button onClick={loadCalendar} style={{ width: '100%', textAlign: 'center', marginTop: 80, fontSize: 14, color: '#c8f97a', background: 'none', border: 'none', cursor: 'pointer' }}>
+            <button onClick={loadCalendar} style={{ width: '100%', textAlign: 'center', marginTop: 80, fontSize: 14, color: '#4a8000', background: 'none', border: 'none', cursor: 'pointer' }}>
               {error}
             </button>
           ) : visibleDates.length === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 80, gap: 8 }}>
-              <p style={{ fontSize: 14, color: '#333' }}>No days selected</p>
-              <button onClick={() => setShowFilter(true)} style={{ fontSize: 13, color: '#c8f97a', background: 'none', border: 'none', cursor: 'pointer' }}>
+              <p style={{ fontSize: 14, color: '#555' }}>No days selected</p>
+              <button onClick={() => setShowFilter(true)} style={{ fontSize: 13, color: '#4a8000', background: 'none', border: 'none', cursor: 'pointer' }}>
                 Open filter to add days →
               </button>
             </div>
@@ -291,7 +291,7 @@ export default function HomePage() {
               {theirBlocks && viewMode === 'day' && (
                 <div style={{ display: 'flex', gap: 18, marginBottom: 14 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#555' }}>
-                    <span style={{ width: 9, height: 9, borderRadius: 2, backgroundColor: '#c8266a', display: 'inline-block' }} />
+                    <span style={{ width: 9, height: 9, borderRadius: 2, backgroundColor: '#d0245e', display: 'inline-block' }} />
                     Mine
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#555' }}>
@@ -306,17 +306,17 @@ export default function HomePage() {
         </div>
 
         {/* Side panel */}
-        <div style={{ width: 288, borderLeft: '1px solid #111', display: 'flex', flexDirection: 'column', overflowY: 'auto', flexShrink: 0 }}>
+        <div style={{ width: 288, borderLeft: '1px solid #e2e2dc', display: 'flex', flexDirection: 'column', overflowY: 'auto', flexShrink: 0 }}>
 
           {/* Free windows */}
           <div style={{ padding: '22px 22px 18px' }}>
-            <p style={{ fontSize: 10, color: '#2e2e2e', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 13 }}>
+            <p style={{ fontSize: 10, color: '#555', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 13 }}>
               {theirBlocks ? 'Mutual free time' : 'Free windows'}
-              {viewMode !== 'day' && <span style={{ color: '#252525' }}> · {format(selectedDate, 'EEE d')}</span>}
+              {viewMode !== 'day' && <span style={{ color: '#999990' }}> · {format(selectedDate, 'EEE d')}</span>}
             </p>
 
             {loading ? null : freeGaps.length === 0 ? (
-              <p style={{ fontSize: 12, color: '#252525' }}>No free windows today</p>
+              <p style={{ fontSize: 12, color: '#999990' }}>No free windows today</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {freeGaps.map((gap, i) => {
@@ -324,9 +324,9 @@ export default function HomePage() {
                   const hrs = Math.floor(mins / 60), rem = mins % 60;
                   const dur = hrs > 0 ? `${hrs}h${rem > 0 ? ` ${rem}m` : ''}` : `${rem}m`;
                   return (
-                    <div key={i} style={{ padding: '9px 12px', backgroundColor: '#0d0d0d', border: '1px solid #161616', borderRadius: 9, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 12, color: '#888' }}>{format(gap.start, 'h:mm a')} – {format(gap.end, 'h:mm a')}</span>
-                      <span style={{ fontSize: 10, color: '#c8f97a', backgroundColor: 'rgba(200,249,122,0.07)', padding: '2px 7px', borderRadius: 999, flexShrink: 0, marginLeft: 8 }}>{dur}</span>
+                    <div key={i} style={{ padding: '9px 12px', backgroundColor: '#ffffff', border: '1px solid #161616', borderRadius: 9, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 12, color: '#444' }}>{format(gap.start, 'h:mm a')} – {format(gap.end, 'h:mm a')}</span>
+                      <span style={{ fontSize: 10, color: '#3a6600', backgroundColor: 'rgba(74,128,0,0.1)', padding: '2px 7px', borderRadius: 999, flexShrink: 0, marginLeft: 8 }}>{dur}</span>
                     </div>
                   );
                 })}
@@ -334,38 +334,38 @@ export default function HomePage() {
             )}
           </div>
 
-          <div style={{ height: 1, backgroundColor: '#111', margin: '0 22px' }} />
+          <div style={{ height: 1, backgroundColor: '#e8e8e2', margin: '0 22px' }} />
 
           {/* Add their calendar */}
           <div style={{ padding: '18px 22px 22px' }}>
-            <p style={{ fontSize: 10, color: '#2e2e2e', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>
+            <p style={{ fontSize: 10, color: '#555', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>
               {theirBlocks ? 'Their calendar added' : 'Add their calendar'}
             </p>
 
             {theirBlocks ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div style={{ padding: '9px 12px', backgroundColor: 'rgba(36,113,163,0.08)', border: '1px solid rgba(36,113,163,0.2)', borderRadius: 9 }}>
-                  <p style={{ fontSize: 11, color: '#2471a3' }}>Calendar loaded · {theirBlocks.length} events</p>
+                <div style={{ padding: '9px 12px', backgroundColor: 'rgba(36,113,163,0.07)', border: '1px solid rgba(36,113,163,0.2)', borderRadius: 9 }}>
+                  <p style={{ fontSize: 11, color: '#1a6090' }}>Calendar loaded · {theirBlocks.length} events</p>
                 </div>
                 <button onClick={() => setTheirBlocks(null)}
-                  style={{ fontSize: 12, color: '#333', background: 'none', border: '1px solid #1a1a1a', borderRadius: 8, padding: '8px 12px', cursor: 'pointer', width: '100%' }}>
+                  style={{ fontSize: 12, color: '#555', background: 'none', border: '1px solid #1a1a1a', borderRadius: 8, padding: '8px 12px', cursor: 'pointer', width: '100%' }}>
                   Remove their calendar
                 </button>
               </div>
             ) : (
               <>
-                <p style={{ fontSize: 11, color: '#262626', marginBottom: 11, lineHeight: 1.65 }}>
+                <p style={{ fontSize: 11, color: '#444', marginBottom: 11, lineHeight: 1.65 }}>
                   Ask them to tap "Share my availability" and paste the link below.
                 </p>
                 <textarea
                   value={linkInput}
                   onChange={e => { setLinkInput(e.target.value); setLinkError(''); }}
                   placeholder="Paste their link here..."
-                  style={{ width: '100%', height: 68, backgroundColor: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: 9, padding: '9px 11px', fontSize: 12, color: '#999', resize: 'none', boxSizing: 'border-box', outline: 'none', fontFamily: 'system-ui, sans-serif' }}
+                  style={{ width: '100%', height: 68, backgroundColor: '#ffffff', border: '1px solid #1a1a1a', borderRadius: 9, padding: '9px 11px', fontSize: 12, color: '#333', resize: 'none', boxSizing: 'border-box', outline: 'none', fontFamily: 'system-ui, sans-serif' }}
                 />
-                {linkError && <p style={{ fontSize: 11, color: '#c8266a', marginTop: 5 }}>{linkError}</p>}
+                {linkError && <p style={{ fontSize: 11, color: '#d0245e', marginTop: 5 }}>{linkError}</p>}
                 <button onClick={handleAddTheirCalendar} disabled={!linkInput.trim()}
-                  style={{ marginTop: 9, width: '100%', padding: '10px', backgroundColor: linkInput.trim() ? '#c8f97a' : '#0f0f0f', color: linkInput.trim() ? '#0a0a0a' : '#2a2a2a', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: linkInput.trim() ? 'pointer' : 'default' }}>
+                  style={{ marginTop: 9, width: '100%', padding: '10px', backgroundColor: linkInput.trim() ? '#4a8000' : '#fafaf7', color: linkInput.trim() ? '#f5f5f0' : '#777', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: linkInput.trim() ? 'pointer' : 'default' }}>
                   Compare calendars
                 </button>
               </>
@@ -375,14 +375,14 @@ export default function HomePage() {
           <div style={{ flex: 1 }} />
 
           {/* Share */}
-          <div style={{ padding: '14px 22px 22px', borderTop: '1px solid #111' }}>
+          <div style={{ padding: '14px 22px 22px', borderTop: '1px solid #e2e2dc' }}>
             {!loading && (
-              <p style={{ fontSize: 10, color: '#1e1e1e', textAlign: 'center', marginBottom: 10 }}>
+              <p style={{ fontSize: 10, color: '#d8d8d2', textAlign: 'center', marginBottom: 10 }}>
                 {blocks.length === 0 ? 'No events loaded' : `${blocks.length} events across 14 days`}
               </p>
             )}
             <button onClick={handleShare} disabled={loading || blocks.length === 0}
-              style={{ width: '100%', backgroundColor: '#c8f97a', borderRadius: 11, padding: '13px', fontSize: 13, fontWeight: 600, color: '#0a0a0a', border: 'none', cursor: 'pointer', opacity: loading || blocks.length === 0 ? 0.4 : 1 }}>
+              style={{ width: '100%', backgroundColor: '#4a8000', color: '#fff', borderRadius: 11, padding: '13px', fontSize: 13, fontWeight: 600, color: '#f5f5f0', border: 'none', cursor: 'pointer', opacity: loading || blocks.length === 0 ? 0.4 : 1 }}>
               {copied ? 'Link copied!' : 'Share my availability'}
             </button>
           </div>
