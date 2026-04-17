@@ -144,10 +144,10 @@ function OverlapContent() {
         </div>
 
         {/* CTA */}
-        <div className="px-5 mt-auto pb-10">
+        <div className="flex flex-col items-center mt-auto pb-10">
           <button
             onClick={handleConnect}
-            className="w-full bg-[#4a8000] rounded-2xl py-[18px] flex items-center justify-center gap-2.5 text-[16px] font-semibold text-white cursor-pointer shadow-md active:scale-[0.98] transition-transform"
+            className="bg-[#4a8000] rounded-2xl px-8 py-4 flex items-center justify-center gap-2.5 text-[16px] font-semibold text-white cursor-pointer shadow-md active:scale-[0.98] transition-transform"
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <rect x="1" y="3" width="18" height="14" rx="3" fill="white" fillOpacity="0.15" stroke="white" strokeWidth="1.5"/>
