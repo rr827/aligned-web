@@ -71,32 +71,96 @@ function OverlapContent() {
 
   if (!connected && !loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] max-w-sm mx-auto px-6 flex flex-col">
-        <div className="flex items-center justify-between pt-14 pb-8">
-          <button onClick={() => router.replace('/')} className="text-[14px] text-[#c8f97a] cursor-pointer">
-            Back
+      <div className="min-h-screen bg-[#f5f5f0] flex flex-col">
+        {/* Top nav */}
+        <div className="flex items-center px-5 pt-10 pb-2">
+          <button
+            onClick={() => router.replace('/')}
+            className="flex items-center gap-1.5 text-[13px] text-[#4a8000] font-medium cursor-pointer"
+          >
+            <span style={{ fontSize: 16 }}>←</span> Back
           </button>
-          <span className="text-[16px] font-semibold text-white">When you're both free</span>
-          <div className="w-10" />
         </div>
 
-        <div className="bg-[#111] rounded-xl p-4 border border-[#1e1e1e] mb-6">
-          <p className="text-[14px] text-[#888] leading-5">
-            Someone shared their availability with you. Connect your Google Calendar to see when you're both free.
+        {/* Hero section */}
+        <div className="flex flex-col items-center px-6 pt-10 pb-8 text-center">
+          {/* Calendar + overlap illustration */}
+          <div className="relative mb-8">
+            <div className="w-20 h-20 rounded-2xl bg-[#e8f5d0] border-2 border-[#c8e89a] flex items-center justify-center shadow-sm">
+              <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
+                <rect x="3" y="7" width="32" height="26" rx="4" fill="#d4edbb" stroke="#4a8000" strokeWidth="2"/>
+                <rect x="3" y="7" width="32" height="8" rx="4" fill="#8fcc5a"/>
+                <rect x="3" y="11" width="32" height="4" fill="#8fcc5a"/>
+                <circle cx="12" cy="4" r="2" fill="#4a8000"/>
+                <circle cx="26" cy="4" r="2" fill="#4a8000"/>
+                <rect x="9" y="19" width="6" height="5" rx="1" fill="#8fcc5a"/>
+                <rect x="17" y="19" width="6" height="5" rx="1" fill="#8fcc5a"/>
+                <rect x="9" y="26" width="6" height="4" rx="1" fill="#c8e89a"/>
+                <rect x="17" y="26" width="6" height="4" rx="1" fill="#c8e89a"/>
+              </svg>
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#4a8000] flex items-center justify-center">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M2.5 7.5L5.5 10.5L11.5 4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          </div>
+
+          <h1 className="text-[26px] font-bold text-[#1a2e0a] leading-tight mb-3">
+            You've been invited!
+          </h1>
+          <p className="text-[15px] text-[#5a6a4a] leading-6 max-w-xs">
+            Someone shared their schedule with you. Connect your Google Calendar to find the best time to meet.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-3 h-3 rounded-full bg-[#c8266a]" />
-          <span className="text-[13px] text-[#666]">Their busy times ({theirBlocks.length} events)</span>
+        {/* Info card */}
+        <div className="mx-5 rounded-2xl bg-white border border-[#e0e8d0] p-4 mb-5 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#f0f7e6] flex items-center justify-center flex-shrink-0 mt-0.5">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <circle cx="9" cy="9" r="7" stroke="#4a8000" strokeWidth="1.5"/>
+                <path d="M9 8v5M9 6h.01" stroke="#4a8000" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </div>
+            <div>
+              <p className="text-[13px] font-semibold text-[#2a3e1a] mb-0.5">How it works</p>
+              <p className="text-[13px] text-[#7a8a6a] leading-5">
+                We'll compare your calendars and highlight the windows where you're both free — no data is stored.
+              </p>
+            </div>
+          </div>
         </div>
 
-        <button
-          onClick={handleConnect}
-          className="w-full bg-[#c8f97a] rounded-2xl py-[18px] flex items-center justify-center text-base font-semibold text-[#0a0a0a] cursor-pointer mt-auto mb-10"
-        >
-          Connect Google Calendar
-        </button>
+        {/* Their calendar loaded indicator */}
+        <div className="mx-5 rounded-2xl bg-white border border-[#e0e8d0] px-4 py-3 mb-8 shadow-sm flex items-center gap-3">
+          <div className="w-2.5 h-2.5 rounded-full bg-[#8fcc5a] flex-shrink-0" />
+          <p className="text-[13px] text-[#4a6030] flex-1">
+            Their calendar is loaded <span className="text-[#888]">({theirBlocks.length} events)</span>
+          </p>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M4 8.5L6.5 11L12 5" stroke="#4a8000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+
+        {/* CTA */}
+        <div className="px-5 mt-auto pb-10">
+          <button
+            onClick={handleConnect}
+            className="w-full bg-[#4a8000] rounded-2xl py-[18px] flex items-center justify-center gap-2.5 text-[16px] font-semibold text-white cursor-pointer shadow-md active:scale-[0.98] transition-transform"
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <rect x="1" y="3" width="18" height="14" rx="3" fill="white" fillOpacity="0.15" stroke="white" strokeWidth="1.5"/>
+              <path d="M1 7h18" stroke="white" strokeWidth="1.5"/>
+              <circle cx="6" cy="2" r="1.5" fill="white"/>
+              <circle cx="14" cy="2" r="1.5" fill="white"/>
+            </svg>
+            Connect Google Calendar
+          </button>
+          <p className="text-center text-[12px] text-[#9aaa8a] mt-3">
+            Read-only access · No events stored
+          </p>
+        </div>
       </div>
     );
   }
