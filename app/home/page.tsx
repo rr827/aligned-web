@@ -288,16 +288,19 @@ export default function HomePage() {
             </div>
           ) : (
             <div style={{ padding: viewMode === 'day' ? '0 32px' : '0 0 0 32px' }}>
-              {theirBlocks && viewMode === 'day' && (
-                <div style={{ display: 'flex', gap: 18, marginBottom: 14 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#555' }}>
-                    <span style={{ width: 9, height: 9, borderRadius: 2, backgroundColor: '#d0245e', display: 'inline-block' }} />
-                    Mine
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#555' }}>
-                    <span style={{ width: 9, height: 9, borderRadius: 2, backgroundColor: '#2471a3', display: 'inline-block' }} />
-                    Theirs
-                  </div>
+              {theirBlocks && (
+                <div style={{ display: 'flex', gap: 14, marginBottom: 14, flexWrap: 'wrap' }}>
+                  {[
+                    { color: '#8fcc5a', label: 'Both free' },
+                    { color: '#fef3b0', label: 'Only me free' },
+                    { color: '#bde0f5', label: 'Only them free' },
+                    { color: '#b8b8b0', label: 'Both busy' },
+                  ].map(({ color, label }) => (
+                    <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#666' }}>
+                      <span style={{ width: 12, height: 12, borderRadius: 2, backgroundColor: color, display: 'inline-block', border: '1px solid rgba(0,0,0,0.1)' }} />
+                      {label}
+                    </div>
+                  ))}
                 </div>
               )}
               <AvailabilityGrid dates={visibleDates} myBlocks={blocks} theirBlocks={theirBlocks ?? undefined} />

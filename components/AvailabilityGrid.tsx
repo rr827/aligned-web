@@ -9,25 +9,86 @@ const HOURS_END = 23;
 const TOTAL_HOURS = HOURS_END - HOURS_START;
 const TIMELINE_HEIGHT = HOUR_HEIGHT * TOTAL_HOURS;
 
+// Single calendar: free=light green, busy=light grey
+// Two calendars:
+//   both free      → green
+//   only me free   → light yellow (they're busy)
+//   only them free → light blue   (I'm busy)
+//   both busy      → dark grey
+const COLOR = {
+  free:      '#d4edbb',   // single cal: free
+  busy:      '#dcdcd4',   // single cal: busy (light grey)
+  bothFree:  '#8fcc5a',   // two cals: both free (green)
+  meFree:    '#fef3b0',   // two cals: only I'm free (light yellow)
+  themFree:  '#bde0f5',   // two cals: only they're free (light blue)
+  bothBusy:  '#b8b8b0',   // two cals: both busy (dark grey)
+};
+
 interface Props {
   dates: Date[];
   myBlocks: BusyBlock[];
   theirBlocks?: BusyBlock[];
 }
 
-function getBlockPosition(block: BusyBlock) {
-  const start = parseISO(block.start);
-  const end = parseISO(block.end);
-  const startMin = start.getHours() * 60 + start.getMinutes();
-  const endMin = end.getHours() * 60 + end.getMinutes();
-  const top = ((startMin - HOURS_START * 60) / 60) * HOUR_HEIGHT;
-  const height = Math.max(((endMin - startMin) / 60) * HOUR_HEIGHT, 4);
-  return { top, height };
+type SegState = 'free' | 'busy' | 'bothFree' | 'meFree' | 'themFree' | 'bothBusy';
+
+function computeSegments(
+  date: Date,
+  myBlocks: BusyBlock[],
+  theirBlocks?: BusyBlock[]
+): { top: number; height: number; state: SegState }[] {
+  const dateStr = format(date, 'yyyy-MM-dd');
+  const startMin = HOURS_START * 60;
+  const endMin = HOURS_END * 60;
+
+  const mine = myBlocks.filter(b => format(parseISO(b.start), 'yyyy-MM-dd') === dateStr);
+  const theirs = (theirBlocks ?? []).filter(b => format(parseISO(b.start), 'yyyy-MM-dd') === dateStr);
+
+  const toMin = (iso: string) => {
+    const d = parseISO(iso);
+    return d.getHours() * 60 + d.getMinutes();
+  };
+
+  // Collect all breakpoints
+  const pts = new Set<number>([startMin, endMin]);
+  for (const b of [...mine, ...theirs]) {
+    const s = Math.max(toMin(b.start), startMin);
+    const e = Math.min(toMin(b.end), endMin);
+    if (s < endMin) pts.add(s);
+    if (e > startMin) pts.add(e);
+  }
+
+  const sorted = Array.from(pts).sort((a, b) => a - b);
+  const segments: { top: number; height: number; state: SegState }[] = [];
+
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const segStart = sorted[i];
+    const segEnd = sorted[i + 1];
+    const mid = (segStart + segEnd) / 2;
+
+    const myBusy = mine.some(b => toMin(b.start) <= mid && toMin(b.end) > mid);
+    const theirBusy = theirs.some(b => toMin(b.start) <= mid && toMin(b.end) > mid);
+
+    let state: SegState;
+    if (theirBlocks) {
+      if (!myBusy && !theirBusy) state = 'bothFree';
+      else if (!myBusy && theirBusy) state = 'meFree';
+      else if (myBusy && !theirBusy) state = 'themFree';
+      else state = 'bothBusy';
+    } else {
+      state = myBusy ? 'busy' : 'free';
+    }
+
+    const top = ((segStart - startMin) / 60) * HOUR_HEIGHT;
+    const height = Math.max(((segEnd - segStart) / 60) * HOUR_HEIGHT, 1);
+    segments.push({ top, height, state });
+  }
+
+  return segments;
 }
 
 export default function AvailabilityGrid({ dates, myBlocks, theirBlocks }: Props) {
   const hours = Array.from({ length: TOTAL_HOURS }, (_, i) => HOURS_START + i);
-  const hasThem = !!theirBlocks;
 
   return (
     <div style={{ display: 'flex', height: TIMELINE_HEIGHT, userSelect: 'none' }}>
@@ -35,7 +96,7 @@ export default function AvailabilityGrid({ dates, myBlocks, theirBlocks }: Props
       <div style={{ width: 44, flexShrink: 0 }}>
         {hours.map(h => (
           <div key={h} style={{ height: HOUR_HEIGHT, paddingTop: 4 }}>
-            <span style={{ fontSize: 11, color: '#555' }}>
+            <span style={{ fontSize: 11, color: '#999' }}>
               {format(new Date().setHours(h, 0, 0, 0), 'h a')}
             </span>
           </div>
@@ -45,61 +106,34 @@ export default function AvailabilityGrid({ dates, myBlocks, theirBlocks }: Props
       {/* Day columns */}
       {dates.map((date, di) => {
         const dateStr = format(date, 'yyyy-MM-dd');
-        const dayMyBlocks = myBlocks.filter(
-          b => format(parseISO(b.start), 'yyyy-MM-dd') === dateStr
-        );
-        const dayTheirBlocks = theirBlocks?.filter(
-          b => format(parseISO(b.start), 'yyyy-MM-dd') === dateStr
-        );
         const isToday = isSameDay(date, new Date());
+        const segments = computeSegments(date, myBlocks, theirBlocks);
 
         return (
           <div key={dateStr} style={{ flex: 1, position: 'relative', height: TIMELINE_HEIGHT, borderLeft: di > 0 ? '1px solid #e2e2dc' : 'none' }}>
-            {/* Hour grid lines */}
+
+            {/* Availability segments */}
+            {segments.map((seg, i) => (
+              <div key={i} style={{
+                position: 'absolute', left: 0, right: 0,
+                top: seg.top, height: seg.height,
+                backgroundColor: COLOR[seg.state],
+              }} />
+            ))}
+
+            {/* Hour grid lines on top */}
             {hours.map(h => (
               <div key={h} style={{
                 position: 'absolute', left: 0, right: 0,
                 top: (h - HOURS_START) * HOUR_HEIGHT,
-                height: 1, backgroundColor: '#e8e8e2', pointerEvents: 'none',
+                height: 1, backgroundColor: 'rgba(0,0,0,0.06)', pointerEvents: 'none',
               }} />
             ))}
 
-            {/* Today tint */}
+            {/* Today outline */}
             {isToday && (
-              <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(74,128,0,0.05)', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', inset: 0, border: '2px solid rgba(74,128,0,0.3)', pointerEvents: 'none' }} />
             )}
-
-            {/* My blocks — left half when split, full when solo */}
-            {dayMyBlocks.map((block, i) => {
-              const { top, height } = getBlockPosition(block);
-              return (
-                <div key={i} style={{
-                  position: 'absolute',
-                  left: 3,
-                  right: hasThem ? '50%' : 3,
-                  top, height,
-                  backgroundColor: '#e05a8a',
-                  border: '1px solid rgba(200,53,120,0.35)',
-                  borderRadius: 4,
-                }} />
-              );
-            })}
-
-            {/* Their blocks — right half */}
-            {hasThem && (dayTheirBlocks ?? []).map((block, i) => {
-              const { top, height } = getBlockPosition(block);
-              return (
-                <div key={i} style={{
-                  position: 'absolute',
-                  left: '50%',
-                  right: 3,
-                  top, height,
-                  backgroundColor: '#3a8bc8',
-                  border: '1px solid rgba(52,152,219,0.3)',
-                  borderRadius: 4,
-                }} />
-              );
-            })}
           </div>
         );
       })}
