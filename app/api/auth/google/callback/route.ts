@@ -36,7 +36,9 @@ export async function GET(request: NextRequest) {
     const { access_token, expires_in } = data;
     const expiry = Date.now() + expires_in * 1000;
 
-    const response = NextResponse.redirect(new URL('/home', request.url));
+    const state = searchParams.get('state');
+    const returnTo = state && state.startsWith('/') ? state : '/home';
+    const response = NextResponse.redirect(new URL(returnTo, request.url));
 
     const cookieOptions = {
       path: '/',

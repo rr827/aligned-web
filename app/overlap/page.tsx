@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { format, addDays, isSameDay } from 'date-fns';
-import { loadToken, startGoogleAuth } from '@/lib/auth';
+import { loadToken } from '@/lib/auth';
 import { fetchBusyBlocks, findMutualFreeSlots, createCalendarEvent, BusyBlock } from '@/lib/calendar';
 import { decodeAvailability } from '@/lib/payload';
 
@@ -47,8 +47,20 @@ function OverlapContent() {
       .finally(() => setLoading(false));
   }, [searchParams, router]);
 
-  const handleConnect = async () => {
-    await startGoogleAuth(window.location.pathname + window.location.search);
+  const handleConnect = () => {
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!;
+    const redirectUri = `${window.location.origin}/api/auth/google/callback`;
+    const returnTo = window.location.pathname + window.location.search;
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope: 'openid email profile https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events',
+      access_type: 'offline',
+      prompt: 'select_account consent',
+      state: returnTo,
+    });
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
   };
 
   const handleBook = async () => {
