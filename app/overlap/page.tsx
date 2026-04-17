@@ -2,12 +2,10 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { format, addDays, isSameDay, differenceInMinutes, startOfWeek } from 'date-fns';
+import { format, addDays, isSameDay, differenceInMinutes, startOfWeek, parseISO } from 'date-fns';
 import { loadToken, clearToken } from '@/lib/auth';
 import { fetchBusyBlocks, createCalendarEvent, BusyBlock } from '@/lib/calendar';
 import { decodeAvailability, buildShareLink } from '@/lib/payload';
-import AvailabilityGrid from '@/components/AvailabilityGrid';
-
 type ViewMode = 'day' | 'workWeek' | 'week';
 
 const ALL_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -48,6 +46,36 @@ function getWeekDates(base: Date): Date[] {
   const monday = startOfWeek(base, { weekStartsOn: 1 });
   return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
 }
+
+const TIME_BLOCKS = [
+  { label: 'Morning', shortLabel: 'AM', startH: 6, endH: 12 },
+  { label: 'Midday',  shortLabel: 'Noon', startH: 12, endH: 15 },
+  { label: 'Afternoon', shortLabel: 'PM', startH: 15, endH: 18 },
+  { label: 'Evening', shortLabel: 'Eve', startH: 18, endH: 22 },
+];
+
+type BlockState = 'bothFree' | 'meFree' | 'themFree' | 'bothBusy';
+
+function getBlockState(date: Date, startH: number, endH: number, myBlocks: BusyBlock[], theirBlocks: BusyBlock[]): BlockState {
+  const dateStr = format(date, 'yyyy-MM-dd');
+  const midMin = ((startH + endH) / 2) * 60;
+  const toMin = (iso: string) => { const d = parseISO(iso); return d.getHours() * 60 + d.getMinutes(); };
+  const mine = myBlocks.filter(b => format(parseISO(b.start), 'yyyy-MM-dd') === dateStr);
+  const theirs = theirBlocks.filter(b => format(parseISO(b.start), 'yyyy-MM-dd') === dateStr);
+  const myBusy = mine.some(b => toMin(b.start) <= midMin && toMin(b.end) > midMin);
+  const theirBusy = theirs.some(b => toMin(b.start) <= midMin && toMin(b.end) > midMin);
+  if (!myBusy && !theirBusy) return 'bothFree';
+  if (!myBusy && theirBusy) return 'meFree';
+  if (myBusy && !theirBusy) return 'themFree';
+  return 'bothBusy';
+}
+
+const BLOCK_COLOR: Record<BlockState, string> = {
+  bothFree:  '#c8f97a',
+  meFree:    '#4a8000',
+  themFree:  '#1c3461',
+  bothBusy:  '#e2e2dc',
+};
 
 function OverlapContent() {
   const searchParams = useSearchParams();
@@ -307,33 +335,8 @@ function OverlapContent() {
       {/* Body */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
-        {/* Calendar */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 0 48px' }}>
-
-          {viewMode !== 'day' && visibleDates.length > 0 && (
-            <div style={{ display: 'flex', borderBottom: '1px solid #e2e2dc', padding: '0 0 0 32px', position: 'sticky', top: 0, backgroundColor: '#f5f5f0', zIndex: 10 }}>
-              <div style={{ width: 44, flexShrink: 0 }} />
-              {visibleDates.map((date, di) => {
-                const isToday = isSameDay(date, new Date());
-                const isSelected = isSameDay(date, selectedDate);
-                return (
-                  <div key={date.toISOString()} onClick={() => { setSelectedDate(date); setViewMode('day'); }}
-                    style={{ flex: 1, padding: '10px 6px', textAlign: 'center', cursor: 'pointer', borderLeft: di > 0 ? '1px solid #111' : 'none' }}>
-                    <div style={{ fontSize: 9, color: '#555', letterSpacing: '0.1em', marginBottom: 5 }}>{format(date, 'EEE').toUpperCase()}</div>
-                    <div style={{ width: 26, height: 26, borderRadius: '50%', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: isToday ? '#4a8000' : isSelected ? '#d8d8d2' : 'transparent' }}>
-                      <span style={{ fontSize: 14, fontWeight: 500, color: isToday ? '#f5f5f0' : isSelected ? '#222' : '#555' }}>{format(date, 'd')}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {viewMode === 'day' && (
-            <div style={{ padding: '18px 32px 14px' }}>
-              <p style={{ fontSize: 16, fontWeight: 500, color: '#111' }}>{format(selectedDate, 'EEEE, MMMM d')}</p>
-            </div>
-          )}
+        {/* Main: compact overlap grid */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '32px 40px 48px', display: 'flex', flexDirection: 'column', gap: 24 }}>
 
           {loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 80, gap: 12 }}>
@@ -341,30 +344,68 @@ function OverlapContent() {
               <p style={{ fontSize: 13, color: '#777' }}>Reading your calendar...</p>
             </div>
           ) : error ? (
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 80 }}>
-              <p style={{ fontSize: 14, color: '#555' }}>{error}</p>
-            </div>
+            <p style={{ fontSize: 14, color: '#555', textAlign: 'center', marginTop: 80 }}>{error}</p>
           ) : (
-            <div style={{ padding: viewMode === 'day' ? '0 32px' : '0 0 0 32px' }}>
-              <div style={{ display: 'flex', gap: 14, marginBottom: 14, flexWrap: 'wrap' }}>
+            <div style={{ backgroundColor: '#1a1a18', borderRadius: 20, padding: '28px 28px 24px', maxWidth: 780 }}>
+              {/* Card header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+                <span style={{ fontSize: 20, fontWeight: 600, color: '#f0f0ea', letterSpacing: '-0.02em' }}>When you are both free</span>
+                <span style={{ backgroundColor: 'rgba(200,249,122,0.15)', color: '#c8f97a', border: '1px solid rgba(200,249,122,0.3)', borderRadius: 999, padding: '5px 14px', fontSize: 13, fontWeight: 600 }}>
+                  {freeGaps.length} slots found
+                </span>
+              </div>
+
+              {/* Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: `48px repeat(7, 1fr)`, gap: 6 }}>
+                {/* Day headers */}
+                <div />
+                {weekDates.map(date => (
+                  <div key={date.toISOString()} style={{ textAlign: 'center', fontSize: 11, fontWeight: 600, color: isSameDay(date, new Date()) ? '#c8f97a' : '#666', letterSpacing: '0.06em', paddingBottom: 4 }}>
+                    {format(date, 'EEE').toUpperCase()[0]}
+                  </div>
+                ))}
+
+                {/* Time block rows */}
+                {TIME_BLOCKS.map(block => (
+                  <>
+                    <div key={block.label + '-label'} style={{ fontSize: 10, color: '#555', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 8, fontWeight: 500 }}>
+                      {block.shortLabel}
+                    </div>
+                    {weekDates.map(date => {
+                      const state = getBlockState(date, block.startH, block.endH, myBlocks, theirBlocks);
+                      const isPast = date < new Date() && !isSameDay(date, new Date());
+                      return (
+                        <div key={date.toISOString() + block.label} style={{
+                          height: 54, borderRadius: 10,
+                          backgroundColor: isPast ? '#222220' : BLOCK_COLOR[state],
+                          opacity: isPast ? 0.4 : 1,
+                          border: state === 'bothBusy' ? '1px solid #2a2a28' : 'none',
+                          transition: 'opacity 0.1s',
+                        }} />
+                      );
+                    })}
+                  </>
+                ))}
+              </div>
+
+              {/* Legend */}
+              <div style={{ display: 'flex', gap: 20, marginTop: 20, flexWrap: 'wrap' }}>
                 {[
-                  { color: '#8fcc5a', label: 'Both free' },
-                  { color: '#fef3b0', label: 'Only me free' },
-                  { color: '#bde0f5', label: 'Only them free' },
-                  { color: '#b8b8b0', label: 'Both busy' },
+                  { color: '#c8f97a', label: 'Both free' },
+                  { color: '#4a8000', label: 'You free' },
+                  { color: '#1c3461', label: 'Them free' },
                 ].map(({ color, label }) => (
-                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#666' }}>
-                    <span style={{ width: 12, height: 12, borderRadius: 2, backgroundColor: color, display: 'inline-block', border: '1px solid rgba(0,0,0,0.1)' }} />
+                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, color: '#888' }}>
+                    <span style={{ width: 14, height: 14, borderRadius: 4, backgroundColor: color, display: 'inline-block' }} />
                     {label}
                   </div>
                 ))}
               </div>
-              <AvailabilityGrid dates={visibleDates} myBlocks={myBlocks} theirBlocks={theirBlocks} />
             </div>
           )}
         </div>
 
-        {/* Side panel */}
+        {/* Side panel — free windows + booking */}
         <div style={{ width: 288, borderLeft: '1px solid #e2e2dc', display: 'flex', flexDirection: 'column', overflowY: 'auto', flexShrink: 0 }}>
 
           {/* Share */}
@@ -383,8 +424,7 @@ function OverlapContent() {
           {/* Mutual free windows */}
           <div style={{ padding: '22px 22px 18px' }}>
             <p style={{ fontSize: 10, color: '#555', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 13 }}>
-              Mutual free time
-              {viewMode !== 'day' && <span style={{ color: '#999990' }}> · {format(selectedDate, 'EEE d')}</span>}
+              Open times · {format(selectedDate, 'EEE d')}
             </p>
 
             {loading ? null : freeGaps.length === 0 ? (
@@ -398,7 +438,7 @@ function OverlapContent() {
                   const isSelected = selectedSlot?.start.getTime() === gap.start.getTime();
                   return (
                     <button key={i} onClick={() => { setSelectedSlot(isSelected ? null : gap); setBooked(false); }}
-                      style={{ padding: '9px 12px', backgroundColor: isSelected ? 'rgba(74,128,0,0.1)' : '#ffffff', border: `1px solid ${isSelected ? '#4a8000' : '#161616'}`, borderRadius: 9, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', width: '100%' }}>
+                      style={{ padding: '9px 12px', backgroundColor: isSelected ? 'rgba(74,128,0,0.1)' : '#ffffff', border: `1px solid ${isSelected ? '#4a8000' : '#e2e2dc'}`, borderRadius: 9, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', width: '100%' }}>
                       <span style={{ fontSize: 12, color: '#444' }}>{format(gap.start, 'h:mm a')} – {format(gap.end, 'h:mm a')}</span>
                       <span style={{ fontSize: 10, color: '#3a6600', backgroundColor: 'rgba(74,128,0,0.1)', padding: '2px 7px', borderRadius: 999, flexShrink: 0, marginLeft: 8 }}>{dur}</span>
                     </button>
@@ -425,16 +465,6 @@ function OverlapContent() {
               )}
             </div>
           )}
-
-          <div style={{ height: 1, backgroundColor: '#e8e8e2', margin: '0 22px' }} />
-
-          {/* Their calendar status */}
-          <div style={{ padding: '18px 22px 22px' }}>
-            <p style={{ fontSize: 10, color: '#555', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>Their calendar</p>
-            <div style={{ padding: '9px 12px', backgroundColor: 'rgba(36,113,163,0.07)', border: '1px solid rgba(36,113,163,0.2)', borderRadius: 9 }}>
-              <p style={{ fontSize: 11, color: '#1a6090' }}>Loaded · {theirBlocks.length} events</p>
-            </div>
-          </div>
 
           <div style={{ flex: 1 }} />
         </div>
