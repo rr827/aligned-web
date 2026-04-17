@@ -14,11 +14,6 @@ export async function GET(request: NextRequest) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
   const redirectUri = `${appUrl}/api/auth/google/callback`;
 
-  console.log('[auth] appUrl:', appUrl);
-  console.log('[auth] redirectUri:', redirectUri);
-  console.log('[auth] clientId set:', !!clientId);
-  console.log('[auth] clientSecret set:', !!clientSecret);
-
   try {
     const res = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',

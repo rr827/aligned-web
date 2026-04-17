@@ -2,31 +2,81 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { format, addDays } from 'date-fns';
+import { format, addDays, differenceInMinutes, startOfWeek, isSameDay } from 'date-fns';
 import { loadToken, clearToken } from '@/lib/auth';
 import { fetchBusyBlocks, BusyBlock } from '@/lib/calendar';
-import { buildShareLink } from '@/lib/payload';
+import { buildShareLink, parseShareLink } from '@/lib/payload';
 import AvailabilityGrid from '@/components/AvailabilityGrid';
+
+type ViewMode = 'day' | 'workWeek' | 'week';
+
+const ALL_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const WORK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+
+function getFreeGaps(date: Date, myBlocks: BusyBlock[], theirBlocks?: BusyBlock[]) {
+  const dateStr = format(date, 'yyyy-MM-dd');
+  const dayStart = new Date(date); dayStart.setHours(6, 0, 0, 0);
+  const dayEnd = new Date(date); dayEnd.setHours(22, 0, 0, 0);
+  const now = new Date();
+
+  const allBusy = [
+    ...myBlocks.filter(b => format(new Date(b.start), 'yyyy-MM-dd') === dateStr),
+    ...(theirBlocks ?? []).filter(b => format(new Date(b.start), 'yyyy-MM-dd') === dateStr),
+  ].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+
+  const merged: { start: Date; end: Date }[] = [];
+  for (const block of allBusy) {
+    const s = new Date(block.start), e = new Date(block.end);
+    if (!merged.length || s >= merged[merged.length - 1].end) {
+      merged.push({ start: s, end: e });
+    } else {
+      merged[merged.length - 1].end = new Date(Math.max(merged[merged.length - 1].end.getTime(), e.getTime()));
+    }
+  }
+
+  const gaps: { start: Date; end: Date }[] = [];
+  let cursor = new Date(Math.max(dayStart.getTime(), now.getTime()));
+  for (const busy of merged) {
+    if (busy.start > cursor) gaps.push({ start: new Date(cursor), end: new Date(busy.start) });
+    cursor = new Date(Math.max(cursor.getTime(), busy.end.getTime()));
+  }
+  if (cursor < dayEnd) gaps.push({ start: new Date(cursor), end: new Date(dayEnd) });
+  return gaps.filter(g => differenceInMinutes(g.end, g.start) >= 30);
+}
+
+function getWeekDates(base: Date): Date[] {
+  const monday = startOfWeek(base, { weekStartsOn: 1 });
+  return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+}
 
 export default function HomePage() {
   const router = useRouter();
   const [blocks, setBlocks] = useState<BusyBlock[]>([]);
+  const [theirBlocks, setTheirBlocks] = useState<BusyBlock[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<ViewMode>('week');
+  const [activeFilters, setActiveFilters] = useState<string[]>(ALL_DAYS);
+  const [showFilter, setShowFilter] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [linkInput, setLinkInput] = useState('');
+  const [linkError, setLinkError] = useState('');
 
-  const dates = Array.from({ length: 7 }, (_, i) => addDays(new Date(), i));
+  const dayStripDates = Array.from({ length: 14 }, (_, i) => addDays(new Date(), i));
+  const weekDates = getWeekDates(selectedDate);
+
+  // Apply day filters to week view
+  const visibleDates = viewMode === 'day'
+    ? [selectedDate]
+    : weekDates.filter(d => activeFilters.includes(format(d, 'EEE')));
 
   const loadCalendar = useCallback(async () => {
     const token = loadToken();
     if (!token) { router.replace('/'); return; }
-
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     try {
-      const busyBlocks = await fetchBusyBlocks(token, 14);
-      setBlocks(busyBlocks);
+      setBlocks(await fetchBusyBlocks(token, 14));
     } catch {
       setError('Could not load calendar. Click to retry.');
     } finally {
@@ -37,114 +87,309 @@ export default function HomePage() {
   useEffect(() => { loadCalendar(); }, [loadCalendar]);
 
   const handleShare = async () => {
-    if (blocks.length === 0) return;
+    if (!blocks.length) return;
     const link = buildShareLink(blocks);
-
     if (navigator.share) {
-      try {
-        await navigator.share({
-          text: `Here is my availability, tap to find a time that works for both of us:\n\n${link}`,
-        });
-        return;
-      } catch { /* fall through to clipboard */ }
+      try { await navigator.share({ text: `Here is my availability:\n\n${link}` }); return; } catch {}
     }
-
     await navigator.clipboard.writeText(link);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleDisconnect = () => {
-    if (!confirm('Disconnect your Google Calendar?')) return;
-    clearToken();
-    router.replace('/');
+  const handleAddTheirCalendar = () => {
+    setLinkError('');
+    const parsed = parseShareLink(linkInput.trim());
+    if (!parsed || parsed.length === 0) {
+      setLinkError('Invalid link — ask them to share their availability link.');
+      return;
+    }
+    setTheirBlocks(parsed);
+    setLinkInput('');
   };
 
-  const dayBlocks = blocks.filter(
-    (b) => format(new Date(b.start), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
-  );
+  const toggleDayFilter = (day: string) => {
+    setActiveFilters(prev =>
+      prev.includes(day)
+        ? prev.length > 1 ? prev.filter(d => d !== day) : prev
+        : [...prev, day].sort((a, b) => ALL_DAYS.indexOf(a) - ALL_DAYS.indexOf(b))
+    );
+  };
+
+  const applyPreset = (preset: 'all' | 'workWeek') => {
+    setActiveFilters(preset === 'all' ? ALL_DAYS : WORK_DAYS);
+  };
+
+  const navigateWeek = (dir: 1 | -1) => setSelectedDate(d => addDays(d, dir * 7));
+
+  const freeGaps = getFreeGaps(selectedDate, blocks, theirBlocks ?? undefined);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex flex-col max-w-sm mx-auto">
+    <div style={{ minHeight: '100vh', backgroundColor: '#0a0a0a', display: 'flex', flexDirection: 'column', fontFamily: 'system-ui, sans-serif', color: 'white' }}>
+
       {/* Header */}
-      <div className="flex justify-between items-start px-6 pt-14 pb-5">
-        <div>
-          <h1 className="text-[28px] font-extralight text-white tracking-[-1px]">aligned</h1>
-          <p className="text-[12px] text-[#444] mt-0.5">{format(new Date(), 'MMMM yyyy')}</p>
+      <div style={{ borderBottom: '1px solid #111', padding: '0 32px', height: 54, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, gap: 16 }}>
+        <span style={{ fontSize: 21, fontWeight: 300, letterSpacing: '-0.06em', flexShrink: 0 }}>aligned</span>
+
+        {/* View mode tabs */}
+        <div style={{ display: 'flex', gap: 2, backgroundColor: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: 9, padding: 3 }}>
+          {(['day', 'workWeek', 'week'] as ViewMode[]).map(mode => (
+            <button key={mode} onClick={() => {
+              setViewMode(mode);
+              if (mode === 'workWeek') setActiveFilters(WORK_DAYS);
+              if (mode === 'week') setActiveFilters(ALL_DAYS);
+            }}
+              style={{ padding: '5px 14px', borderRadius: 6, fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer', transition: 'all 0.1s',
+                backgroundColor: viewMode === mode ? '#1e1e1e' : 'transparent',
+                color: viewMode === mode ? '#ddd' : '#3a3a3a' }}>
+              {mode === 'day' ? 'Day' : mode === 'workWeek' ? 'Work Week' : 'Week'}
+            </button>
+          ))}
         </div>
-        <button
-          onClick={handleDisconnect}
-          className="text-[13px] text-[#333] mt-1.5 cursor-pointer"
-        >
+
+        {/* Filter toggle (week modes only) */}
+        {viewMode !== 'day' && (
+          <button onClick={() => setShowFilter(v => !v)}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 7, border: `1px solid ${showFilter ? '#c8f97a' : '#1a1a1a'}`, background: showFilter ? 'rgba(200,249,122,0.06)' : '#0d0d0d', color: showFilter ? '#c8f97a' : '#3a3a3a', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M1 2h10M3 6h6M5 10h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            Filter days
+            {activeFilters.length < ALL_DAYS.length && (
+              <span style={{ backgroundColor: '#c8f97a', color: '#0a0a0a', borderRadius: 999, padding: '1px 6px', fontSize: 10, fontWeight: 700 }}>
+                {activeFilters.length}
+              </span>
+            )}
+          </button>
+        )}
+
+        <div style={{ flex: 1 }} />
+
+        <span style={{ fontSize: 13, color: '#2e2e2e', flexShrink: 0 }}>{format(new Date(), 'MMMM yyyy')}</span>
+        <button onClick={() => { if (confirm('Disconnect your Google Calendar?')) { clearToken(); router.replace('/'); } }}
+          style={{ fontSize: 13, color: '#2a2a2a', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}>
           Disconnect
         </button>
       </div>
 
-      {/* Date strip */}
-      <div className="flex gap-2 overflow-x-auto px-6 pb-5 no-scrollbar">
-        {dates.map((date) => {
-          const active = format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
-          return (
-            <button
-              key={date.toISOString()}
-              onClick={() => setSelectedDate(date)}
-              className={`flex-shrink-0 w-12 py-1.5 rounded-xl flex flex-col items-center border cursor-pointer transition-colors ${
-                active
-                  ? 'border-[#c8f97a]'
-                  : 'bg-[#111] border-[#1e1e1e]'
-              }`}
-            >
-              <span className={`text-[10px] tracking-wide mb-0.5 ${active ? 'text-[#c8f97a]' : 'text-[#555]'}`}>
-                {format(date, 'EEE')}
-              </span>
-              <span className={`text-lg font-semibold ${active ? 'text-[#c8f97a]' : 'text-[#444]'}`}>
-                {format(date, 'd')}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Grid area */}
-      <div className="flex-1 overflow-y-auto px-6">
-        <p className="text-[16px] font-medium text-white mb-5">
-          {format(selectedDate, 'EEEE, MMMM d')}
-        </p>
-
-        {loading ? (
-          <div className="flex flex-col items-center mt-16 gap-3">
-            <div className="w-5 h-5 border-2 border-[#c8f97a] border-t-transparent rounded-full animate-spin" />
-            <p className="text-[14px] text-[#444]">Reading your calendar...</p>
-          </div>
-        ) : error ? (
-          <button
-            onClick={loadCalendar}
-            className="w-full text-center mt-16 text-[14px] text-[#c8f97a] cursor-pointer"
-          >
-            {error}
+      {/* Filter panel */}
+      {showFilter && viewMode !== 'day' && (
+        <div style={{ borderBottom: '1px solid #111', padding: '12px 32px', display: 'flex', alignItems: 'center', gap: 10, backgroundColor: '#080808', flexShrink: 0 }}>
+          <span style={{ fontSize: 11, color: '#3a3a3a', textTransform: 'uppercase', letterSpacing: '0.12em', marginRight: 4 }}>Show</span>
+          <button onClick={() => applyPreset('workWeek')}
+            style={{ padding: '4px 11px', borderRadius: 6, fontSize: 12, border: `1px solid ${JSON.stringify(activeFilters) === JSON.stringify(WORK_DAYS) ? '#c8f97a' : '#1e1e1e'}`, background: JSON.stringify(activeFilters) === JSON.stringify(WORK_DAYS) ? 'rgba(200,249,122,0.06)' : '#0f0f0f', color: JSON.stringify(activeFilters) === JSON.stringify(WORK_DAYS) ? '#c8f97a' : '#444', cursor: 'pointer' }}>
+            Work week
           </button>
-        ) : (
-          <AvailabilityGrid date={selectedDate} blocks={dayBlocks} />
-        )}
-      </div>
-
-      {/* Events count */}
-      {!loading && !error && (
-        <p className="text-[11px] text-[#333] text-center py-2">
-          {blocks.length === 0 ? 'No events found' : `${blocks.length} events across 14 days`}
-        </p>
+          <button onClick={() => applyPreset('all')}
+            style={{ padding: '4px 11px', borderRadius: 6, fontSize: 12, border: `1px solid ${JSON.stringify(activeFilters) === JSON.stringify(ALL_DAYS) ? '#c8f97a' : '#1e1e1e'}`, background: JSON.stringify(activeFilters) === JSON.stringify(ALL_DAYS) ? 'rgba(200,249,122,0.06)' : '#0f0f0f', color: JSON.stringify(activeFilters) === JSON.stringify(ALL_DAYS) ? '#c8f97a' : '#444', cursor: 'pointer' }}>
+            Full week
+          </button>
+          <div style={{ width: 1, height: 16, backgroundColor: '#1a1a1a', margin: '0 4px' }} />
+          {ALL_DAYS.map(day => (
+            <button key={day} onClick={() => toggleDayFilter(day)}
+              style={{ width: 36, height: 28, borderRadius: 6, fontSize: 11, fontWeight: 500, border: `1px solid ${activeFilters.includes(day) ? '#c8f97a' : '#1a1a1a'}`, background: activeFilters.includes(day) ? 'rgba(200,249,122,0.08)' : '#0f0f0f', color: activeFilters.includes(day) ? '#c8f97a' : '#333', cursor: 'pointer' }}>
+              {day}
+            </button>
+          ))}
+        </div>
       )}
 
-      {/* Share bar */}
-      <div className="px-6 pb-10 pt-3 border-t border-[#111]">
-        <button
-          onClick={handleShare}
-          disabled={loading || blocks.length === 0}
-          className="w-full bg-[#c8f97a] rounded-2xl py-[18px] flex items-center justify-center text-base font-semibold text-[#0a0a0a] disabled:opacity-40 cursor-pointer transition-opacity"
-        >
-          {copied ? 'Link copied!' : 'Share my availability'}
-        </button>
+      {/* Date navigation bar */}
+      {viewMode === 'day' ? (
+        <div style={{ borderBottom: '1px solid #111', padding: '10px 32px', display: 'flex', gap: 6, overflowX: 'auto', flexShrink: 0 }}>
+          {dayStripDates.map(date => {
+            const active = format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
+            const isToday = isSameDay(date, new Date());
+            return (
+              <button key={date.toISOString()} onClick={() => setSelectedDate(date)}
+                style={{ flexShrink: 0, width: 52, padding: '7px 0', borderRadius: 11, display: 'flex', flexDirection: 'column', alignItems: 'center', border: `1px solid ${active ? '#c8f97a' : '#1a1a1a'}`, background: active ? 'rgba(200,249,122,0.06)' : '#0d0d0d', cursor: 'pointer' }}>
+                <span style={{ fontSize: 9, color: active ? '#c8f97a' : '#333', marginBottom: 3, letterSpacing: '0.08em' }}>
+                  {format(date, 'EEE').toUpperCase()}
+                </span>
+                <span style={{ fontSize: 17, fontWeight: 600, color: active ? '#c8f97a' : isToday ? '#888' : '#2e2e2e' }}>
+                  {format(date, 'd')}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div style={{ borderBottom: '1px solid #111', padding: '10px 32px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+          <button onClick={() => navigateWeek(-1)}
+            style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid #1a1a1a', background: '#0d0d0d', color: '#444', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
+          <span style={{ fontSize: 13, color: '#555', minWidth: 180 }}>
+            {format(weekDates[0], 'MMM d')} – {format(weekDates[6], 'MMM d, yyyy')}
+          </span>
+          <button onClick={() => navigateWeek(1)}
+            style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid #1a1a1a', background: '#0d0d0d', color: '#444', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>→</button>
+          <button onClick={() => setSelectedDate(new Date())}
+            style={{ fontSize: 12, color: '#3a3a3a', background: 'none', border: '1px solid #1a1a1a', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>
+            Today
+          </button>
+          {visibleDates.length === 0 && (
+            <span style={{ fontSize: 12, color: '#555', marginLeft: 8 }}>No days selected — use filter to add days</span>
+          )}
+        </div>
+      )}
+
+      {/* Body */}
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+
+        {/* Calendar main */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 0 48px' }}>
+
+          {/* Multi-day column headers */}
+          {viewMode !== 'day' && visibleDates.length > 0 && (
+            <div style={{ display: 'flex', borderBottom: '1px solid #111', padding: '0 0 0 32px', position: 'sticky', top: 0, backgroundColor: '#0a0a0a', zIndex: 10 }}>
+              <div style={{ width: 44, flexShrink: 0 }} />
+              {visibleDates.map((date, di) => {
+                const isToday = isSameDay(date, new Date());
+                const isSelected = isSameDay(date, selectedDate);
+                return (
+                  <div key={date.toISOString()} onClick={() => { setSelectedDate(date); setViewMode('day'); }}
+                    style={{ flex: 1, padding: '10px 6px', textAlign: 'center', cursor: 'pointer', borderLeft: di > 0 ? '1px solid #111' : 'none' }}>
+                    <div style={{ fontSize: 9, color: '#2e2e2e', letterSpacing: '0.1em', marginBottom: 5 }}>
+                      {format(date, 'EEE').toUpperCase()}
+                    </div>
+                    <div style={{ width: 26, height: 26, borderRadius: '50%', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: isToday ? '#c8f97a' : isSelected ? '#1e1e1e' : 'transparent' }}>
+                      <span style={{ fontSize: 14, fontWeight: 500, color: isToday ? '#0a0a0a' : isSelected ? '#aaa' : '#3a3a3a' }}>
+                        {format(date, 'd')}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {viewMode === 'day' && (
+            <div style={{ padding: '18px 32px 14px' }}>
+              <p style={{ fontSize: 16, fontWeight: 500, color: 'white' }}>
+                {format(selectedDate, 'EEEE, MMMM d')}
+              </p>
+            </div>
+          )}
+
+          {loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 80, gap: 12 }}>
+              <div style={{ width: 20, height: 20, border: '2px solid #c8f97a', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              <p style={{ fontSize: 13, color: '#444' }}>Reading your calendar...</p>
+            </div>
+          ) : error ? (
+            <button onClick={loadCalendar} style={{ width: '100%', textAlign: 'center', marginTop: 80, fontSize: 14, color: '#c8f97a', background: 'none', border: 'none', cursor: 'pointer' }}>
+              {error}
+            </button>
+          ) : visibleDates.length === 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 80, gap: 8 }}>
+              <p style={{ fontSize: 14, color: '#333' }}>No days selected</p>
+              <button onClick={() => setShowFilter(true)} style={{ fontSize: 13, color: '#c8f97a', background: 'none', border: 'none', cursor: 'pointer' }}>
+                Open filter to add days →
+              </button>
+            </div>
+          ) : (
+            <div style={{ padding: viewMode === 'day' ? '0 32px' : '0 0 0 32px' }}>
+              {theirBlocks && viewMode === 'day' && (
+                <div style={{ display: 'flex', gap: 18, marginBottom: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#555' }}>
+                    <span style={{ width: 9, height: 9, borderRadius: 2, backgroundColor: '#c8266a', display: 'inline-block' }} />
+                    Mine
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#555' }}>
+                    <span style={{ width: 9, height: 9, borderRadius: 2, backgroundColor: '#2471a3', display: 'inline-block' }} />
+                    Theirs
+                  </div>
+                </div>
+              )}
+              <AvailabilityGrid dates={visibleDates} myBlocks={blocks} theirBlocks={theirBlocks ?? undefined} />
+            </div>
+          )}
+        </div>
+
+        {/* Side panel */}
+        <div style={{ width: 288, borderLeft: '1px solid #111', display: 'flex', flexDirection: 'column', overflowY: 'auto', flexShrink: 0 }}>
+
+          {/* Free windows */}
+          <div style={{ padding: '22px 22px 18px' }}>
+            <p style={{ fontSize: 10, color: '#2e2e2e', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 13 }}>
+              {theirBlocks ? 'Mutual free time' : 'Free windows'}
+              {viewMode !== 'day' && <span style={{ color: '#252525' }}> · {format(selectedDate, 'EEE d')}</span>}
+            </p>
+
+            {loading ? null : freeGaps.length === 0 ? (
+              <p style={{ fontSize: 12, color: '#252525' }}>No free windows today</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {freeGaps.map((gap, i) => {
+                  const mins = differenceInMinutes(gap.end, gap.start);
+                  const hrs = Math.floor(mins / 60), rem = mins % 60;
+                  const dur = hrs > 0 ? `${hrs}h${rem > 0 ? ` ${rem}m` : ''}` : `${rem}m`;
+                  return (
+                    <div key={i} style={{ padding: '9px 12px', backgroundColor: '#0d0d0d', border: '1px solid #161616', borderRadius: 9, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 12, color: '#888' }}>{format(gap.start, 'h:mm a')} – {format(gap.end, 'h:mm a')}</span>
+                      <span style={{ fontSize: 10, color: '#c8f97a', backgroundColor: 'rgba(200,249,122,0.07)', padding: '2px 7px', borderRadius: 999, flexShrink: 0, marginLeft: 8 }}>{dur}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div style={{ height: 1, backgroundColor: '#111', margin: '0 22px' }} />
+
+          {/* Add their calendar */}
+          <div style={{ padding: '18px 22px 22px' }}>
+            <p style={{ fontSize: 10, color: '#2e2e2e', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>
+              {theirBlocks ? 'Their calendar added' : 'Add their calendar'}
+            </p>
+
+            {theirBlocks ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ padding: '9px 12px', backgroundColor: 'rgba(36,113,163,0.08)', border: '1px solid rgba(36,113,163,0.2)', borderRadius: 9 }}>
+                  <p style={{ fontSize: 11, color: '#2471a3' }}>Calendar loaded · {theirBlocks.length} events</p>
+                </div>
+                <button onClick={() => setTheirBlocks(null)}
+                  style={{ fontSize: 12, color: '#333', background: 'none', border: '1px solid #1a1a1a', borderRadius: 8, padding: '8px 12px', cursor: 'pointer', width: '100%' }}>
+                  Remove their calendar
+                </button>
+              </div>
+            ) : (
+              <>
+                <p style={{ fontSize: 11, color: '#262626', marginBottom: 11, lineHeight: 1.65 }}>
+                  Ask them to tap "Share my availability" and paste the link below.
+                </p>
+                <textarea
+                  value={linkInput}
+                  onChange={e => { setLinkInput(e.target.value); setLinkError(''); }}
+                  placeholder="Paste their link here..."
+                  style={{ width: '100%', height: 68, backgroundColor: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: 9, padding: '9px 11px', fontSize: 12, color: '#999', resize: 'none', boxSizing: 'border-box', outline: 'none', fontFamily: 'system-ui, sans-serif' }}
+                />
+                {linkError && <p style={{ fontSize: 11, color: '#c8266a', marginTop: 5 }}>{linkError}</p>}
+                <button onClick={handleAddTheirCalendar} disabled={!linkInput.trim()}
+                  style={{ marginTop: 9, width: '100%', padding: '10px', backgroundColor: linkInput.trim() ? '#c8f97a' : '#0f0f0f', color: linkInput.trim() ? '#0a0a0a' : '#2a2a2a', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: linkInput.trim() ? 'pointer' : 'default' }}>
+                  Compare calendars
+                </button>
+              </>
+            )}
+          </div>
+
+          <div style={{ flex: 1 }} />
+
+          {/* Share */}
+          <div style={{ padding: '14px 22px 22px', borderTop: '1px solid #111' }}>
+            {!loading && (
+              <p style={{ fontSize: 10, color: '#1e1e1e', textAlign: 'center', marginBottom: 10 }}>
+                {blocks.length === 0 ? 'No events loaded' : `${blocks.length} events across 14 days`}
+              </p>
+            )}
+            <button onClick={handleShare} disabled={loading || blocks.length === 0}
+              style={{ width: '100%', backgroundColor: '#c8f97a', borderRadius: 11, padding: '13px', fontSize: 13, fontWeight: 600, color: '#0a0a0a', border: 'none', cursor: 'pointer', opacity: loading || blocks.length === 0 ? 0.4 : 1 }}>
+              {copied ? 'Link copied!' : 'Share my availability'}
+            </button>
+          </div>
+        </div>
       </div>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } } * { scrollbar-width: none; } *::-webkit-scrollbar { display: none; }`}</style>
     </div>
   );
 }
