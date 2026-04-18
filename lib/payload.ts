@@ -1,40 +1,116 @@
 import { BusyBlock } from './calendar';
 
+export type Preference = 'morning' | 'afternoon' | 'evening' | 'none';
+
+export interface AlignedPayload {
+  range: { start: string; end: string };
+  sleep: { from: string; to: string } | null;
+  preference: Preference | null;
+  blocks: BusyBlock[];
+}
+
+// ── V1 helpers (backwards compat — used by /overlap) ──────────────────────
+
 export function encodeAvailability(blocks: BusyBlock[]): string {
   const compressed = blocks.map((b) => [
     Math.floor(new Date(b.start).getTime() / 1000),
     Math.floor(new Date(b.end).getTime() / 1000),
   ]);
-
-  const json = JSON.stringify(compressed);
-  return btoa(json).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  return b64encode(JSON.stringify(compressed));
 }
 
 export function decodeAvailability(encoded: string): BusyBlock[] {
   try {
-    const base64 = encoded
-      .replace(/-/g, '+')
-      .replace(/_/g, '/')
-      .padEnd(encoded.length + ((4 - (encoded.length % 4)) % 4), '=');
-
-    const compressed: number[][] = JSON.parse(atob(base64));
-
-    return compressed.map(([startSec, endSec]) => ({
-      start: new Date(startSec * 1000).toISOString(),
-      end: new Date(endSec * 1000).toISOString(),
-    }));
+    const raw = JSON.parse(b64decode(encoded));
+    // V1: raw is number[][]
+    if (Array.isArray(raw) && Array.isArray(raw[0])) {
+      return (raw as number[][]).map(([s, e]) => ({
+        start: new Date(s * 1000).toISOString(),
+        end: new Date(e * 1000).toISOString(),
+      }));
+    }
+    return [];
   } catch {
     return [];
   }
 }
 
+// ── V2 helpers ─────────────────────────────────────────────────────────────
+
+function b64encode(str: string): string {
+  return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+function b64decode(str: string): string {
+  const padded = str
+    .replace(/-/g, '+')
+    .replace(/_/g, '/')
+    .padEnd(str.length + ((4 - (str.length % 4)) % 4), '=');
+  return atob(padded);
+}
+
+export function encodePayload(payload: AlignedPayload): string {
+  const compact = {
+    v: 2,
+    r: { s: payload.range.start, e: payload.range.end },
+    sl: payload.sleep ?? null,
+    p: payload.preference ?? null,
+    b: payload.blocks.map((b) => [
+      Math.floor(new Date(b.start).getTime() / 1000),
+      Math.floor(new Date(b.end).getTime() / 1000),
+    ]),
+  };
+  return b64encode(JSON.stringify(compact));
+}
+
+export function decodePayload(encoded: string): AlignedPayload {
+  try {
+    const raw = JSON.parse(b64decode(encoded));
+
+    // V2 format
+    if (raw?.v === 2) {
+      return {
+        range: { start: raw.r.s, end: raw.r.e },
+        sleep: raw.sl ?? null,
+        preference: raw.p ?? null,
+        blocks: (raw.b as number[][]).map(([s, e]) => ({
+          start: new Date(s * 1000).toISOString(),
+          end: new Date(e * 1000).toISOString(),
+        })),
+      };
+    }
+
+    // V1 fallback: raw is number[][]
+    if (Array.isArray(raw) && Array.isArray(raw[0])) {
+      const today = new Date().toISOString().slice(0, 10);
+      return {
+        range: { start: today, end: today },
+        sleep: null,
+        preference: null,
+        blocks: (raw as number[][]).map(([s, e]) => ({
+          start: new Date(s * 1000).toISOString(),
+          end: new Date(e * 1000).toISOString(),
+        })),
+      };
+    }
+
+    return { range: { start: '', end: '' }, sleep: null, preference: null, blocks: [] };
+  } catch {
+    return { range: { start: '', end: '' }, sleep: null, preference: null, blocks: [] };
+  }
+}
+
+// ── Link builders ──────────────────────────────────────────────────────────
+
 export function buildShareLink(blocks: BusyBlock[]): string {
   const payload = encodeAvailability(blocks);
-  const base =
-    typeof window !== 'undefined'
-      ? window.location.origin
-      : 'https://getaligned.app';
+  const base = typeof window !== 'undefined' ? window.location.origin : 'https://getaligned.app';
   return `${base}/overlap?data=${payload}`;
+}
+
+export function buildRoomLink(code: string): string {
+  const base = typeof window !== 'undefined' ? window.location.origin : 'https://getaligned.app';
+  return `${base}/room/${code}`;
 }
 
 export function parseShareLink(url: string): BusyBlock[] | null {

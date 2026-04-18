@@ -1,0 +1,97 @@
+import { createClient } from '@supabase/supabase-js';
+
+export interface Proposal {
+  proposer_index: number;
+  start_time: string;
+  end_time: string;
+  status: 'pending' | 'accepted' | 'declined';
+}
+
+export interface RoomRow {
+  code: string;
+  expires_at: string;
+  participants: string[]; // encoded AlignedPayload strings
+  proposals: Proposal[];
+  created_at: string;
+}
+
+function db() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
+
+function generateCode(): string {
+  // Exclude ambiguous chars (0/O, 1/I/L)
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
+export async function createRoom(encodedPayload: string): Promise<string> {
+  const supabase = db();
+  const expires_at = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = generateCode();
+    const { error } = await supabase.from('rooms').insert({
+      code,
+      expires_at,
+      participants: [encodedPayload],
+      proposals: [],
+    });
+    if (!error) return code;
+    // 23505 = unique constraint violation — retry with a new code
+    if (error.code !== '23505') throw new Error(error.message);
+  }
+  throw new Error('Could not generate a unique room code');
+}
+
+export async function getRoom(code: string): Promise<RoomRow | null> {
+  const { data, error } = await db()
+    .from('rooms')
+    .select('*')
+    .eq('code', code.toUpperCase())
+    .single();
+  if (error || !data) return null;
+  return data as RoomRow;
+}
+
+export async function joinRoom(code: string, encodedPayload: string): Promise<RoomRow> {
+  const supabase = db();
+  const room = await getRoom(code);
+  if (!room) throw new Error('Room not found');
+
+  const { data, error } = await supabase
+    .from('rooms')
+    .update({ participants: [...room.participants, encodedPayload] })
+    .eq('code', code.toUpperCase())
+    .select()
+    .single();
+  if (error || !data) throw new Error(error?.message ?? 'Failed to join room');
+  return data as RoomRow;
+}
+
+export async function proposeTime(
+  code: string,
+  proposerIndex: number,
+  startTime: string,
+  endTime: string
+): Promise<void> {
+  const supabase = db();
+  const room = await getRoom(code);
+  if (!room) throw new Error('Room not found');
+
+  const proposal: Proposal = {
+    proposer_index: proposerIndex,
+    start_time: startTime,
+    end_time: endTime,
+    status: 'pending',
+  };
+
+  const { error } = await supabase
+    .from('rooms')
+    .update({ proposals: [...room.proposals, proposal] })
+    .eq('code', code.toUpperCase());
+  if (error) throw new Error(error.message);
+}
