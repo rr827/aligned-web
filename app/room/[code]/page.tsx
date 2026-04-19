@@ -112,16 +112,16 @@ function WeekView({
       {/* Header row */}
       <div />
       {weekDates.map(date => (
-        <div key={date.toISOString()} style={{ textAlign: 'center', padding: '6px 0', fontSize: 13, fontWeight: 600, color: isSameDay(date, new Date()) ? '#4a8000' : '#888', letterSpacing: '0.05em' }}>
+        <div key={date.toISOString()} style={{ textAlign: 'center', padding: '6px 0', fontSize: 16, fontWeight: 600, color: isSameDay(date, new Date()) ? '#4a8000' : '#888', letterSpacing: '0.05em' }}>
           <div>{format(date, 'EEE').toUpperCase()}</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: isSameDay(date, new Date()) ? '#4a8000' : '#1a2e0a' }}>{format(date, 'd')}</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: isSameDay(date, new Date()) ? '#4a8000' : '#1a2e0a' }}>{format(date, 'd')}</div>
         </div>
       ))}
 
       {/* 30-min slot rows */}
       {HALF_HOURS.map(({ h, m, label }) => (
         <>
-          <div key={`lbl-${h}-${m}`} style={{ fontSize: 12, color: '#aaa', textAlign: 'right', paddingRight: 6, paddingTop: 4, height: 22, display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end' }}>
+          <div key={`lbl-${h}-${m}`} style={{ fontSize: 15, color: '#aaa', textAlign: 'right', paddingRight: 6, paddingTop: 4, height: 22, display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end' }}>
             {label}
           </div>
           {weekDates.map(date => {
@@ -189,7 +189,7 @@ function SwimLaneView({
       {/* Time axis */}
       <div style={{ position: 'relative', height: 20, marginLeft: 100, minWidth: 600, marginBottom: 8 }}>
         {[6, 9, 12, 15, 18, 21].map(h => (
-          <span key={h} style={{ position: 'absolute', left: `${toPercent(h * 60)}%`, fontSize: 12, color: '#aaa', transform: 'translateX(-50%)' }}>
+          <span key={h} style={{ position: 'absolute', left: `${toPercent(h * 60)}%`, fontSize: 15, color: '#aaa', transform: 'translateX(-50%)' }}>
             {h === 12 ? '12p' : h > 12 ? `${h - 12}p` : `${h}a`}
           </span>
         ))}
@@ -201,7 +201,7 @@ function SwimLaneView({
           const busySegments = getDayBusy(date, p.blocks);
           return (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 92, fontSize: 14, color: '#555', textAlign: 'right', flexShrink: 0 }}>
+              <div style={{ width: 92, fontSize: 17, color: '#555', textAlign: 'right', flexShrink: 0 }}>
                 <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: PARTICIPANT_COLORS[i % PARTICIPANT_COLORS.length], marginRight: 5 }} />
                 Person {i + 1}
               </div>
@@ -233,7 +233,7 @@ function SwimLaneView({
 
         {/* Overlap band */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 92, fontSize: 13, color: '#4a8000', textAlign: 'right', fontWeight: 600, flexShrink: 0 }}>Overlap</div>
+          <div style={{ width: 92, fontSize: 16, color: '#4a8000', textAlign: 'right', fontWeight: 600, flexShrink: 0 }}>Overlap</div>
           <div style={{ flex: 1, height: 20, borderRadius: 8, backgroundColor: '#f0f0ea', position: 'relative', overflow: 'hidden' }}>
             {overlapBands.map((band, i) => (
               <div key={i} style={{
@@ -254,7 +254,7 @@ function SwimLaneView({
 
         {/* Hover time label */}
         {hoverMin !== null && (
-          <div style={{ marginLeft: 100, fontSize: 13, color: '#4a8000' }}>
+          <div style={{ marginLeft: 100, fontSize: 16, color: '#4a8000' }}>
             {format(new Date(date).setHours(Math.floor(hoverMin / 60), hoverMin % 60), 'h:mm a')}
           </div>
         )}
@@ -277,7 +277,7 @@ function GridDayView({
         {/* Headers */}
         <div />
         {participants.map((_, i) => (
-          <div key={i} style={{ textAlign: 'center', fontSize: 13, fontWeight: 600, color: PARTICIPANT_COLORS[i % PARTICIPANT_COLORS.length], padding: '6px 0' }}>
+          <div key={i} style={{ textAlign: 'center', fontSize: 16, fontWeight: 600, color: PARTICIPANT_COLORS[i % PARTICIPANT_COLORS.length], padding: '6px 0' }}>
             P{i + 1}
           </div>
         ))}
@@ -290,7 +290,7 @@ function GridDayView({
           const allFree = overlapCount(slotStart, slotEnd, allBlocks) === participants.length && participants.length > 0;
           return (
             <>
-              <div key={`lbl-${hour}`} style={{ fontSize: 12, color: '#aaa', textAlign: 'right', paddingRight: 6, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+              <div key={`lbl-${hour}`} style={{ fontSize: 15, color: '#aaa', textAlign: 'right', paddingRight: 6, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
                 {hour === 12 ? '12p' : hour > 12 ? `${hour - 12}p` : `${hour}a`}
               </div>
               {allBlocks.map((blocks, i) => {
@@ -363,7 +363,7 @@ function ArcClockView({
           const tx = cx + (outerR + 16) * Math.cos(ang);
           const ty = cy + (outerR + 16) * Math.sin(ang);
           return (
-            <text key={h} x={tx} y={ty} textAnchor="middle" dominantBaseline="middle" fontSize={9} fill="#aaa">
+            <text key={h} x={tx} y={ty} textAnchor="middle" dominantBaseline="middle" fontSize={12} fill="#aaa">
               {h === 12 ? '12p' : h > 12 ? `${h - 12}p` : `${h}a`}
             </text>
           );
@@ -431,16 +431,16 @@ function ArcClockView({
         })}
 
         {/* Center label */}
-        <text x={cx} y={cy - 6} textAnchor="middle" fontSize={12} fill="#4a8000" fontWeight={600}>
+        <text x={cx} y={cy - 6} textAnchor="middle" fontSize={15} fill="#4a8000" fontWeight={600}>
           {participants.length > 0 ? 'Tap to propose' : ''}
         </text>
-        <text x={cx} y={cy + 12} textAnchor="middle" fontSize={10} fill="#888">
+        <text x={cx} y={cy + 12} textAnchor="middle" fontSize={13} fill="#888">
           {format(date, 'EEE, MMM d')}
         </text>
       </svg>
 
       {/* Legend */}
-      <div style={{ display: 'flex', gap: 16, fontSize: 13, color: '#888', flexWrap: 'wrap', justifyContent: 'center' }}>
+      <div style={{ display: 'flex', gap: 16, fontSize: 16, color: '#888', flexWrap: 'wrap', justifyContent: 'center' }}>
         <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, backgroundColor: '#d4edbb', marginRight: 4 }} />Free</span>
         <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, backgroundColor: 'rgba(0,160,140,0.6)', marginRight: 4 }} />Overlap</span>
         <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, backgroundColor: '#aaa', marginRight: 4 }} />Busy/Sleep</span>
@@ -548,8 +548,8 @@ function RoomContent() {
 
   if (error) return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, fontFamily: 'system-ui, sans-serif' }}>
-      <p style={{ fontSize: 18, color: '#555' }}>{error}</p>
-      <button onClick={() => router.replace('/connect')} style={{ fontSize: 16, color: '#4a8000', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Start a new room</button>
+      <p style={{ fontSize: 22, color: '#555' }}>{error}</p>
+      <button onClick={() => router.replace('/connect')} style={{ fontSize: 19, color: '#4a8000', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Start a new room</button>
     </div>
   );
 
@@ -558,22 +558,22 @@ function RoomContent() {
 
       {/* Header */}
       <div style={{ borderBottom: '1px solid #e2e2dc', padding: '0 28px', height: 54, display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
-        <span style={{ fontSize: 22, fontWeight: 300, letterSpacing: '-0.06em', color: '#1a1a18' }}>aligned</span>
+        <span style={{ fontSize: 26, fontWeight: 300, letterSpacing: '-0.06em', color: '#1a1a18' }}>aligned</span>
 
         {/* Room code badge */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, backgroundColor: '#fff', border: '1px solid #e0e0d8', borderRadius: 10, padding: '5px 12px' }}>
-          <span style={{ fontSize: 13, color: '#888' }}>Room</span>
-          <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: '0.12em', color: '#1a2e0a' }}>{code}</span>
+          <span style={{ fontSize: 16, color: '#888' }}>Room</span>
+          <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: '0.12em', color: '#1a2e0a' }}>{code}</span>
         </div>
 
         {/* Participant count */}
         <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
           {participants.map((_, i) => (
-            <div key={i} style={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: PARTICIPANT_COLORS[i % PARTICIPANT_COLORS.length], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#fff', fontWeight: 700, border: '2px solid #f5f5f0', marginLeft: i > 0 ? -8 : 0 }}>
+            <div key={i} style={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: PARTICIPANT_COLORS[i % PARTICIPANT_COLORS.length], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, color: '#fff', fontWeight: 700, border: '2px solid #f5f5f0', marginLeft: i > 0 ? -8 : 0 }}>
               {i + 1}
             </div>
           ))}
-          <span style={{ fontSize: 14, color: '#888', marginLeft: 8 }}>{participants.length} {participants.length === 1 ? 'person' : 'people'}</span>
+          <span style={{ fontSize: 17, color: '#888', marginLeft: 8 }}>{participants.length} {participants.length === 1 ? 'person' : 'people'}</span>
         </div>
 
         <div style={{ flex: 1 }} />
@@ -582,7 +582,7 @@ function RoomContent() {
         <div style={{ display: 'flex', gap: 2, backgroundColor: '#fff', border: '1px solid #1a1a1a', borderRadius: 9, padding: 3 }}>
           {(['week', 'day'] as const).map(m => (
             <button key={m} onClick={() => setViewMode(m)}
-              style={{ padding: '5px 14px', borderRadius: 6, fontSize: 14, fontWeight: 500, border: 'none', cursor: 'pointer', backgroundColor: viewMode === m ? '#d8d8d2' : 'transparent', color: viewMode === m ? '#0a0a0a' : '#555' }}>
+              style={{ padding: '5px 14px', borderRadius: 6, fontSize: 17, fontWeight: 500, border: 'none', cursor: 'pointer', backgroundColor: viewMode === m ? '#d8d8d2' : 'transparent', color: viewMode === m ? '#0a0a0a' : '#555' }}>
               {m === 'week' ? 'Week' : 'Day'}
             </button>
           ))}
@@ -592,7 +592,7 @@ function RoomContent() {
           <div style={{ display: 'flex', gap: 2, backgroundColor: '#fff', border: '1px solid #e0e0d8', borderRadius: 9, padding: 3 }}>
             {(['swimlane', 'grid', 'arc'] as DailyView[]).map(v => (
               <button key={v} onClick={() => setDailyView(v)}
-                style={{ padding: '5px 10px', borderRadius: 6, fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer', backgroundColor: dailyView === v ? '#d8d8d2' : 'transparent', color: dailyView === v ? '#0a0a0a' : '#555', textTransform: 'capitalize' }}>
+                style={{ padding: '5px 10px', borderRadius: 6, fontSize: 16, fontWeight: 500, border: 'none', cursor: 'pointer', backgroundColor: dailyView === v ? '#d8d8d2' : 'transparent', color: dailyView === v ? '#0a0a0a' : '#555', textTransform: 'capitalize' }}>
                 {v}
               </button>
             ))}
@@ -604,17 +604,17 @@ function RoomContent() {
       <div style={{ borderBottom: '1px solid #e2e2dc', padding: '10px 28px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
         {viewMode === 'week' ? (
           <>
-            <button onClick={() => setWeekBase(d => addDays(d, -7))} style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid #1a1a1a', background: '#fff', cursor: 'pointer', fontSize: 15 }}>←</button>
-            <span style={{ fontSize: 15, color: '#555', minWidth: 180 }}>{format(weekDates[0], 'MMM d')} – {format(weekDates[6], 'MMM d, yyyy')}</span>
-            <button onClick={() => setWeekBase(d => addDays(d, 7))} style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid #1a1a1a', background: '#fff', cursor: 'pointer', fontSize: 15 }}>→</button>
-            <button onClick={() => setWeekBase(new Date())} style={{ fontSize: 14, color: '#555', background: 'none', border: '1px solid #1a1a1a', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>Today</button>
+            <button onClick={() => setWeekBase(d => addDays(d, -7))} style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid #1a1a1a', background: '#fff', cursor: 'pointer', fontSize: 18 }}>←</button>
+            <span style={{ fontSize: 18, color: '#555', minWidth: 180 }}>{format(weekDates[0], 'MMM d')} – {format(weekDates[6], 'MMM d, yyyy')}</span>
+            <button onClick={() => setWeekBase(d => addDays(d, 7))} style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid #1a1a1a', background: '#fff', cursor: 'pointer', fontSize: 18 }}>→</button>
+            <button onClick={() => setWeekBase(new Date())} style={{ fontSize: 17, color: '#555', background: 'none', border: '1px solid #1a1a1a', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>Today</button>
           </>
         ) : (
           <>
-            <button onClick={() => setSelectedDate(d => addDays(d, -1))} style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid #1a1a1a', background: '#fff', cursor: 'pointer', fontSize: 15 }}>←</button>
-            <span style={{ fontSize: 15, color: '#555', minWidth: 160 }}>{format(selectedDate, 'EEEE, MMMM d')}</span>
-            <button onClick={() => setSelectedDate(d => addDays(d, 1))} style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid #1a1a1a', background: '#fff', cursor: 'pointer', fontSize: 15 }}>→</button>
-            <button onClick={() => setSelectedDate(new Date())} style={{ fontSize: 14, color: '#555', background: 'none', border: '1px solid #1a1a1a', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>Today</button>
+            <button onClick={() => setSelectedDate(d => addDays(d, -1))} style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid #1a1a1a', background: '#fff', cursor: 'pointer', fontSize: 18 }}>←</button>
+            <span style={{ fontSize: 18, color: '#555', minWidth: 160 }}>{format(selectedDate, 'EEEE, MMMM d')}</span>
+            <button onClick={() => setSelectedDate(d => addDays(d, 1))} style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid #1a1a1a', background: '#fff', cursor: 'pointer', fontSize: 18 }}>→</button>
+            <button onClick={() => setSelectedDate(new Date())} style={{ fontSize: 17, color: '#555', background: 'none', border: '1px solid #1a1a1a', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>Today</button>
           </>
         )}
       </div>
@@ -625,9 +625,9 @@ function RoomContent() {
         {/* Main view area */}
         <div style={{ flex: 1, overflowY: 'auto', overflowX: 'auto', padding: '28px 32px 48px' }}>
           {participants.length === 0 ? (
-            <div style={{ textAlign: 'center', marginTop: 80, color: '#888', fontSize: 16 }}>
+            <div style={{ textAlign: 'center', marginTop: 80, color: '#888', fontSize: 19 }}>
               <p style={{ marginBottom: 8 }}>No one has connected yet.</p>
-              {!isConnected && <button onClick={handleJoin} style={{ fontSize: 16, color: '#4a8000', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Be the first to join →</button>}
+              {!isConnected && <button onClick={handleJoin} style={{ fontSize: 19, color: '#4a8000', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Be the first to join →</button>}
             </div>
           ) : viewMode === 'week' ? (
             <WeekView weekDates={weekDates} allBlocks={allBlocks} onSlotClick={handleSlotClick} selectedSlot={selectedSlot} />
@@ -646,12 +646,12 @@ function RoomContent() {
           {/* Share / Join */}
           <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e2dc', display: 'flex', flexDirection: 'column', gap: 8 }}>
             <button onClick={handleCopyLink}
-              style={{ width: '100%', backgroundColor: '#4a8000', color: '#fff', borderRadius: 11, padding: '12px', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
+              style={{ width: '100%', backgroundColor: '#4a8000', color: '#fff', borderRadius: 11, padding: '12px', fontSize: 18, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
               {copied ? '✓ Link copied!' : 'Copy invite link'}
             </button>
             {!isConnected && (
               <button onClick={handleJoin}
-                style={{ width: '100%', backgroundColor: '#fff', color: '#4a8000', borderRadius: 11, padding: '12px', fontSize: 15, fontWeight: 600, border: '1.5px solid #4a8000', cursor: 'pointer' }}>
+                style={{ width: '100%', backgroundColor: '#fff', color: '#4a8000', borderRadius: 11, padding: '12px', fontSize: 18, fontWeight: 600, border: '1.5px solid #4a8000', cursor: 'pointer' }}>
                 Join this room
               </button>
             )}
@@ -660,15 +660,15 @@ function RoomContent() {
           {/* Proposals list */}
           {room?.proposals && room.proposals.length > 0 && (
             <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e2dc' }}>
-              <p style={{ fontSize: 12, color: '#555', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 10 }}>Proposals</p>
+              <p style={{ fontSize: 15, color: '#555', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 10 }}>Proposals</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {room.proposals.map((prop, i) => (
-                  <div key={i} style={{ padding: '8px 12px', borderRadius: 9, backgroundColor: '#fff', border: '1px solid #e0e0d8', fontSize: 14 }}>
+                  <div key={i} style={{ padding: '8px 12px', borderRadius: 9, backgroundColor: '#fff', border: '1px solid #e0e0d8', fontSize: 17 }}>
                     <p style={{ color: '#888', marginBottom: 2 }}>Person {prop.proposer_index + 1} suggests</p>
                     <p style={{ fontWeight: 600, color: '#1a2e0a' }}>
                       {format(parseISO(prop.start_time), 'EEE MMM d, h:mm a')} – {format(parseISO(prop.end_time), 'h:mm a')}
                     </p>
-                    <span style={{ fontSize: 12, color: prop.status === 'pending' ? '#888' : '#4a8000', textTransform: 'capitalize' }}>{prop.status}</span>
+                    <span style={{ fontSize: 15, color: prop.status === 'pending' ? '#888' : '#4a8000', textTransform: 'capitalize' }}>{prop.status}</span>
                   </div>
                 ))}
               </div>
@@ -677,13 +677,13 @@ function RoomContent() {
 
           {/* Best slots */}
           <div style={{ padding: '16px 20px' }}>
-            <p style={{ fontSize: 12, color: '#555', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 10 }}>
+            <p style={{ fontSize: 15, color: '#555', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 10 }}>
               Best times · {rankedSlots.length} found
             </p>
             {participants.length < 2 ? (
-              <p style={{ fontSize: 14, color: '#aaa' }}>Waiting for more people to join…</p>
+              <p style={{ fontSize: 17, color: '#aaa' }}>Waiting for more people to join…</p>
             ) : rankedSlots.length === 0 ? (
-              <p style={{ fontSize: 14, color: '#aaa' }}>No mutual free slots this week.</p>
+              <p style={{ fontSize: 17, color: '#aaa' }}>No mutual free slots this week.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {rankedSlots.map((slot, i) => {
@@ -691,9 +691,9 @@ function RoomContent() {
                   return (
                     <button key={i} onClick={() => handleSlotClick(slot)}
                       style={{ padding: '9px 12px', backgroundColor: isSelected ? 'rgba(74,128,0,0.08)' : '#fff', border: `1px solid ${isSelected ? '#4a8000' : '#e2e2dc'}`, borderRadius: 9, display: 'flex', flexDirection: 'column', gap: 2, cursor: 'pointer', textAlign: 'left', width: '100%' }}>
-                      <span style={{ fontSize: 13, color: '#888' }}>{format(slot.start, 'EEE, MMM d')}</span>
-                      <span style={{ fontSize: 15, fontWeight: 600, color: '#1a2e0a' }}>{format(slot.start, 'h:mm a')} – {format(slot.end, 'h:mm a')}</span>
-                      <span style={{ fontSize: 12, color: '#4a8000' }}>{slot.count}/{participants.length} free</span>
+                      <span style={{ fontSize: 16, color: '#888' }}>{format(slot.start, 'EEE, MMM d')}</span>
+                      <span style={{ fontSize: 18, fontWeight: 600, color: '#1a2e0a' }}>{format(slot.start, 'h:mm a')} – {format(slot.end, 'h:mm a')}</span>
+                      <span style={{ fontSize: 15, color: '#4a8000' }}>{slot.count}/{participants.length} free</span>
                     </button>
                   );
                 })}
@@ -704,15 +704,15 @@ function RoomContent() {
           {/* Propose selected slot */}
           {selectedSlot && myIndex !== null && (
             <div style={{ margin: '0 20px 20px', padding: '12px', backgroundColor: 'rgba(74,128,0,0.06)', border: '1px solid rgba(74,128,0,0.2)', borderRadius: 11 }}>
-              <p style={{ fontSize: 13, color: '#555', marginBottom: 3 }}>{format(selectedSlot.start, 'EEE, MMM d')}</p>
-              <p style={{ fontSize: 16, fontWeight: 600, color: '#1a2e0a', marginBottom: 10 }}>
+              <p style={{ fontSize: 16, color: '#555', marginBottom: 3 }}>{format(selectedSlot.start, 'EEE, MMM d')}</p>
+              <p style={{ fontSize: 19, fontWeight: 600, color: '#1a2e0a', marginBottom: 10 }}>
                 {format(selectedSlot.start, 'h:mm a')} – {format(selectedSlot.end, 'h:mm a')}
               </p>
               {proposed ? (
-                <p style={{ fontSize: 15, color: '#4a8000', fontWeight: 600 }}>✓ Proposal shared!</p>
+                <p style={{ fontSize: 18, color: '#4a8000', fontWeight: 600 }}>✓ Proposal shared!</p>
               ) : (
                 <button onClick={handlePropose} disabled={proposing}
-                  style={{ width: '100%', backgroundColor: '#4a8000', color: '#fff', borderRadius: 9, padding: '10px', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', opacity: proposing ? 0.6 : 1 }}>
+                  style={{ width: '100%', backgroundColor: '#4a8000', color: '#fff', borderRadius: 9, padding: '10px', fontSize: 18, fontWeight: 600, border: 'none', cursor: 'pointer', opacity: proposing ? 0.6 : 1 }}>
                   {proposing ? 'Proposing...' : 'Suggest this time'}
                 </button>
               )}
