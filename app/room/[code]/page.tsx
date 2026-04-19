@@ -85,18 +85,25 @@ function weekCellTeal(count: number, total: number): string {
   return `rgba(0, 160, 140, ${alpha.toFixed(2)})`;
 }
 
-const HOURS = Array.from({ length: 16 }, (_, i) => i + 6); // 6am–9pm
+// 30-min slots, 6am–10pm = 32 slots
+const HALF_HOURS = Array.from({ length: 32 }, (_, i) => ({
+  h: Math.floor(i / 2) + 6,
+  m: (i % 2) * 30,
+  label: i % 2 === 0 ? (Math.floor(i / 2) + 6 === 12 ? '12p' : Math.floor(i / 2) + 6 > 12 ? `${Math.floor(i / 2) + 6 - 12}p` : `${Math.floor(i / 2) + 6}a`) : '',
+}));
+// Keep HOURS for GridDayView (1hr rows)
+const HOURS = Array.from({ length: 16 }, (_, i) => i + 6);
 const PARTICIPANT_COLORS = ['#4a8000', '#1c3461', '#7a3800', '#5a0a5a', '#0a4a5a'];
 
 // ── Sub-components ─────────────────────────────────────────────────────────
 
 function WeekView({
-  weekDates, allBlocks, participants, onSlotClick,
+  weekDates, allBlocks, onSlotClick, selectedSlot,
 }: {
   weekDates: Date[];
   allBlocks: BusyBlock[][];
-  participants: AlignedPayload[];
   onSlotClick: (slot: { start: Date; end: Date }) => void;
+  selectedSlot: { start: Date; end: Date } | null;
 }) {
   const total = allBlocks.length;
 
@@ -111,25 +118,26 @@ function WeekView({
         </div>
       ))}
 
-      {/* Hour rows */}
-      {HOURS.map(hour => (
+      {/* 30-min slot rows */}
+      {HALF_HOURS.map(({ h, m, label }) => (
         <>
-          <div key={`lbl-${hour}`} style={{ fontSize: 10, color: '#aaa', textAlign: 'right', paddingRight: 6, paddingTop: 6 }}>
-            {hour === 12 ? '12p' : hour > 12 ? `${hour - 12}p` : `${hour}a`}
+          <div key={`lbl-${h}-${m}`} style={{ fontSize: 10, color: '#aaa', textAlign: 'right', paddingRight: 6, paddingTop: 4, height: 22, display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end' }}>
+            {label}
           </div>
           {weekDates.map(date => {
             const slotStart = new Date(date);
-            slotStart.setHours(hour, 0, 0, 0);
-            const slotEnd = addMinutes(slotStart, 60);
+            slotStart.setHours(h, m, 0, 0);
+            const slotEnd = addMinutes(slotStart, 30);
             const count = overlapCount(slotStart, slotEnd, allBlocks);
             const isPast = slotStart < new Date();
-            const bg = isPast ? '#f0f0ea' : weekCellTeal(count, total);
+            const isSelected = selectedSlot?.start.getTime() === slotStart.getTime();
             const isFullOverlap = count === total && total > 0;
+            const bg = isSelected ? '#4a8000' : isPast ? '#f0f0ea' : weekCellTeal(count, total);
             return (
-              <button key={date.toISOString() + hour}
+              <button key={date.toISOString() + h + m}
                 onClick={() => !isPast && onSlotClick({ start: slotStart, end: slotEnd })}
                 title={count > 0 ? `${count}/${total} free` : 'Busy'}
-                style={{ height: 36, borderRadius: 6, border: isFullOverlap ? '1.5px solid rgba(0,160,140,0.5)' : '1px solid rgba(0,0,0,0.04)', backgroundColor: bg, cursor: isPast ? 'default' : count === total ? 'pointer' : 'default', transition: 'opacity 0.1s', opacity: isPast ? 0.4 : 1 }} />
+                style={{ height: 22, borderRadius: 4, border: isSelected ? '1.5px solid #4a8000' : isFullOverlap ? '1.5px solid rgba(0,160,140,0.4)' : '1px solid rgba(0,0,0,0.04)', backgroundColor: bg, cursor: isPast ? 'default' : 'pointer', opacity: isPast ? 0.35 : 1, transition: 'background 0.1s' }} />
             );
           })}
         </>
@@ -622,7 +630,7 @@ function RoomContent() {
               {!isConnected && <button onClick={handleJoin} style={{ fontSize: 14, color: '#4a8000', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Be the first to join →</button>}
             </div>
           ) : viewMode === 'week' ? (
-            <WeekView weekDates={weekDates} allBlocks={allBlocks} participants={participants} onSlotClick={handleSlotClick} />
+            <WeekView weekDates={weekDates} allBlocks={allBlocks} onSlotClick={handleSlotClick} selectedSlot={selectedSlot} />
           ) : dailyView === 'swimlane' ? (
             <SwimLaneView date={selectedDate} participants={participants} allBlocks={allBlocks} onSlotClick={handleSlotClick} />
           ) : dailyView === 'grid' ? (
