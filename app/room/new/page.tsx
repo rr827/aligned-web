@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { loadToken } from '@/lib/auth';
-import { fetchBusyBlocks } from '@/lib/calendar';
+import { fetchBusyBlocks, BusyBlock } from '@/lib/calendar';
 import { encodePayload, AlignedPayload } from '@/lib/payload';
 import { format, addDays, differenceInDays } from 'date-fns';
 
@@ -41,7 +41,7 @@ export default function RoomNewPage() {
         differenceInDays(new Date(range.end + 'T23:59'), new Date()) + 1
       );
 
-      let blocks;
+      let blocks: BusyBlock[];
       try {
         blocks = await fetchBusyBlocks(token, daysAhead);
       } catch {
