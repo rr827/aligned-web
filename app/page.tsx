@@ -28,8 +28,8 @@ export default function Home() {
             <span style={{ color: '#c8f97a' }}>Stay accountable.</span>
           </h1>
           <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.4)', lineHeight: 1.7, marginBottom: 40, maxWidth: 420 }}>
-            Open a shared room. Drag to mark your free time on a live calendar grid.
-            See everyone&apos;s overlap instantly — then propose the time.
+            Open a shared room. Drag to propose a meeting time on a live calendar grid.
+            See if it works for everyone — then book it.
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
             <a href="/connect" style={{ backgroundColor: '#c8f97a', color: '#0a0a0a', fontWeight: 600, padding: '16px 32px', borderRadius: 999, fontSize: 16, textDecoration: 'none' }}>
@@ -47,13 +47,12 @@ export default function Home() {
       <section id="how" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '96px 0' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 48px' }}>
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 16 }}>How it works</p>
-          <h2 style={{ fontSize: 56, fontWeight: 300, letterSpacing: '-0.02em', marginBottom: 64 }}>Four steps, zero friction.</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 32 }}>
+          <h2 style={{ fontSize: 56, fontWeight: 300, letterSpacing: '-0.02em', marginBottom: 64 }}>Three steps, zero friction.</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32 }}>
             {[
-              { num: '01', title: 'Open a room', body: 'Create a shared room in one tap. Share the room code — no accounts needed for anyone.' },
-              { num: '02', title: 'Drag your free time', body: 'Everyone drags to select their availability on a live week grid. 5-minute granularity, no forms.' },
-              { num: '03', title: 'See the overlap', body: 'The arc view shows the group\'s availability at a glance. Free windows appear the moment everyone marks their time.' },
-              { num: '04', title: 'Propose the session', body: 'Pick a mutual window and propose it directly from the room. It lands on both Google Calendars.' },
+              { num: '01', title: 'Open a room', body: 'Create a shared room in one tap. Share the code — no accounts needed for anyone.' },
+              { num: '02', title: 'Drag to propose a time', body: 'Drag on a live calendar grid to mark when you want to meet. See everyone\'s availability at a glance.' },
+              { num: '03', title: 'Confirm and book', body: 'When you agree on a time, propose it from the room. It lands straight on your calendar.' },
             ].map((step) => (
               <div key={step.num} style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 24 }}>
                 <span style={{ fontSize: 13, color: '#c8f97a', fontWeight: 600, letterSpacing: '0.15em', display: 'block', marginBottom: 16 }}>{step.num}</span>
