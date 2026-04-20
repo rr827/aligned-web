@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState, useRef, Suspense } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import {
-  format, addDays, startOfWeek, isSameDay, differenceInMinutes, parseISO, addMinutes,
+  format, addDays, startOfWeek, isSameDay, parseISO, addMinutes,
 } from 'date-fns';
 import { loadToken } from '@/lib/auth';
 import { BusyBlock } from '@/lib/calendar';
@@ -35,7 +35,7 @@ function overlapCount(
   ).length;
 }
 
-/** Merge busy blocks for a participant for a given date (6am–10pm) */
+/** Busy blocks for a participant on a given date */
 function getDayBusy(date: Date, blocks: BusyBlock[]): { startMin: number; endMin: number }[] {
   const dateStr = format(date, 'yyyy-MM-dd');
   return blocks
@@ -63,7 +63,6 @@ function rankSlots(
       const count = overlapCount(slotStart, slotEnd, allBlocks);
       if (count === 0 || count < allBlocks.length) continue;
       let score = count * 10;
-      // Preference bonus
       preferences.forEach(p => {
         if (p === 'morning' && h >= 6 && h < 12) score += 3;
         if (p === 'afternoon' && h >= 12 && h < 18) score += 3;
@@ -76,75 +75,241 @@ function rankSlots(
   return slots.sort((a, b) => b.score - a.score).slice(0, 12);
 }
 
-// Bright green opacity by overlap fraction
-function weekCellGreen(count: number, total: number): string {
-  if (count === 0 || total === 0) return 'transparent';
-  const frac = count / total;
-  const alpha = 0.18 + frac * 0.62;
-  return `rgba(80, 200, 60, ${alpha.toFixed(2)})`;
-}
-
 type SelectedRange = { start: Date; end: Date } | null;
 
-// 30-min slots, 6am–10pm = 32 slots
-const HALF_HOURS = Array.from({ length: 32 }, (_, i) => ({
-  h: Math.floor(i / 2) + 6,
-  m: (i % 2) * 30,
-  label: i % 2 === 0 ? (Math.floor(i / 2) + 6 === 12 ? '12p' : Math.floor(i / 2) + 6 > 12 ? `${Math.floor(i / 2) + 6 - 12}p` : `${Math.floor(i / 2) + 6}a`) : '',
-}));
 // Keep HOURS for GridDayView (1hr rows)
 const HOURS = Array.from({ length: 16 }, (_, i) => i + 6);
 const PARTICIPANT_COLORS = ['#4a8000', '#1c3461', '#7a3800', '#5a0a5a', '#0a4a5a'];
 
+// ── WeekView grid constants ─────────────────────────────────────────────────
+const HOUR_HEIGHT = 56; // px per hour
+const GRID_DAY_START = 6;
+const GRID_DAY_END = 22;
+const GRID_TOTAL_HOURS = GRID_DAY_END - GRID_DAY_START; // 16
+const GRID_H = GRID_TOTAL_HOURS * HOUR_HEIGHT; // 896px
+
+function snapTo5(min: number): number {
+  return Math.round(min / 5) * 5;
+}
+
+function yToMin(y: number, height: number): number {
+  const raw = GRID_DAY_START * 60 + (y / height) * GRID_TOTAL_HOURS * 60;
+  return Math.max(GRID_DAY_START * 60, Math.min(GRID_DAY_END * 60, snapTo5(raw)));
+}
+
+function WeekGridLines() {
+  return (
+    <svg style={{ position: 'absolute', inset: 0, width: '100%', height: GRID_H, pointerEvents: 'none' }}>
+      {Array.from({ length: GRID_TOTAL_HOURS + 1 }, (_, i) => {
+        const y = i * HOUR_HEIGHT;
+        return (
+          <g key={i}>
+            {/* Hour — solid */}
+            <line x1={0} y1={y} x2="100%" y2={y} stroke="#bbb" strokeWidth={1} />
+            {i < GRID_TOTAL_HOURS && (
+              <>
+                {/* 30-min — dashed */}
+                <line x1={0} y1={y + HOUR_HEIGHT / 2} x2="100%" y2={y + HOUR_HEIGHT / 2}
+                  stroke="#d4d4d4" strokeWidth={0.8} strokeDasharray="4 4" />
+                {/* 15-min — light dashed */}
+                <line x1={0} y1={y + HOUR_HEIGHT / 4} x2="100%" y2={y + HOUR_HEIGHT / 4}
+                  stroke="#e4e4e4" strokeWidth={0.6} strokeDasharray="2 6" />
+                <line x1={0} y1={y + (HOUR_HEIGHT * 3) / 4} x2="100%" y2={y + (HOUR_HEIGHT * 3) / 4}
+                  stroke="#e4e4e4" strokeWidth={0.6} strokeDasharray="2 6" />
+              </>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 // ── Sub-components ─────────────────────────────────────────────────────────
 
 function WeekView({
-  weekDates, allBlocks, onSlotClick, selectedRange,
+  weekDates, allBlocks, selectedRange, onRangeChange,
 }: {
   weekDates: Date[];
   allBlocks: BusyBlock[][];
-  onSlotClick: (slot: { start: Date; end: Date }) => void;
   selectedRange: SelectedRange;
+  onRangeChange: (range: SelectedRange) => void;
 }) {
-  const total = allBlocks.length;
+  const [drag, setDrag] = useState<{ day: Date; startMin: number; endMin: number } | null>(null);
+  const dragStateRef = useRef<{ day: Date; startMin: number; endMin: number } | null>(null);
+  const dragColRef = useRef<HTMLDivElement | null>(null);
+  const onRangeChangeRef = useRef(onRangeChange);
+  useEffect(() => { onRangeChangeRef.current = onRangeChange; });
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!dragStateRef.current || !dragColRef.current) return;
+      const rect = dragColRef.current.getBoundingClientRect();
+      const y = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
+      const min = yToMin(y, rect.height);
+      const updated = { ...dragStateRef.current, endMin: min };
+      dragStateRef.current = updated;
+      setDrag({ ...updated });
+    };
+    const onUp = () => {
+      const d = dragStateRef.current;
+      if (!d) return;
+      const s = Math.min(d.startMin, d.endMin);
+      const e2 = Math.max(d.startMin, d.endMin);
+      if (e2 - s < 5) {
+        // Short click = deselect
+        onRangeChangeRef.current(null);
+      } else {
+        const start = new Date(d.day); start.setHours(Math.floor(s / 60), s % 60, 0, 0);
+        const end = new Date(d.day); end.setHours(Math.floor(e2 / 60), e2 % 60, 0, 0);
+        onRangeChangeRef.current({ start, end });
+      }
+      dragStateRef.current = null;
+      dragColRef.current = null;
+      setDrag(null);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, []);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>, day: Date) => {
+    e.preventDefault();
+    const colEl = e.currentTarget;
+    const rect = colEl.getBoundingClientRect();
+    const y = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
+    const min = yToMin(y, rect.height);
+    const newDrag = { day, startMin: min, endMin: min };
+    dragStateRef.current = newDrag;
+    dragColRef.current = colEl;
+    setDrag(newDrag);
+  };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '44px repeat(7, 1fr)', gap: 2, minWidth: 560 }}>
-      {/* Header row */}
-      <div />
-      {weekDates.map(date => (
-        <div key={date.toISOString()} style={{ textAlign: 'center', padding: '6px 0', fontSize: 16, fontWeight: 600, color: isSameDay(date, new Date()) ? '#4a8000' : '#888', letterSpacing: '0.05em' }}>
-          <div>{format(date, 'EEE').toUpperCase()}</div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: isSameDay(date, new Date()) ? '#4a8000' : '#1a2e0a' }}>{format(date, 'd')}</div>
-        </div>
-      ))}
-
-      {/* 30-min slot rows */}
-      {HALF_HOURS.map(({ h, m, label }) => (
-        <>
-          <div key={`lbl-${h}-${m}`} style={{ fontSize: 15, color: '#aaa', textAlign: 'right', paddingRight: 6, paddingTop: 4, height: 22, display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end' }}>
-            {label}
+    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 560 }}>
+      {/* Day header row */}
+      <div style={{ display: 'grid', gridTemplateColumns: '44px repeat(7, 1fr)', gap: 2, marginBottom: 4 }}>
+        <div />
+        {weekDates.map(date => (
+          <div key={date.toISOString()} style={{ textAlign: 'center', padding: '6px 0', fontSize: 16, fontWeight: 600, color: isSameDay(date, new Date()) ? '#4a8000' : '#888', letterSpacing: '0.05em' }}>
+            <div>{format(date, 'EEE').toUpperCase()}</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: isSameDay(date, new Date()) ? '#4a8000' : '#1a2e0a' }}>{format(date, 'd')}</div>
           </div>
-          {weekDates.map(date => {
-            const slotStart = new Date(date);
-            slotStart.setHours(h, m, 0, 0);
-            const slotEnd = addMinutes(slotStart, 30);
-            const count = overlapCount(slotStart, slotEnd, allBlocks);
-            const isPast = slotStart < new Date();
-            const isInRange = selectedRange
-              ? slotStart >= selectedRange.start && slotEnd <= selectedRange.end
-              : false;
-            const isFullOverlap = count === total && total > 0;
-            const bg = isInRange ? 'rgba(74,128,0,0.14)' : isPast ? '#f0f0ea' : weekCellGreen(count, total);
+        ))}
+      </div>
+
+      {/* Grid body */}
+      <div style={{ display: 'flex', gap: 2 }}>
+        {/* Time labels */}
+        <div style={{ width: 44, flexShrink: 0, position: 'relative', height: GRID_H }}>
+          {Array.from({ length: GRID_TOTAL_HOURS + 1 }, (_, i) => {
+            const h = GRID_DAY_START + i;
             return (
-              <button key={date.toISOString() + h + m}
-                onClick={() => !isPast && onSlotClick({ start: slotStart, end: slotEnd })}
-                title={count > 0 ? `${count}/${total} free` : 'Busy'}
-                style={{ height: 22, borderRadius: 4, border: isInRange ? '2px solid #4a8000' : isFullOverlap ? '1.5px solid rgba(80,200,60,0.5)' : '1px solid rgba(0,0,0,0.04)', backgroundColor: bg, cursor: isPast ? 'default' : 'pointer', opacity: isPast ? 0.35 : 1, transition: 'background 0.1s' }} />
+              <div key={h} style={{ position: 'absolute', top: i * HOUR_HEIGHT - 8, right: 6, fontSize: 13, color: '#bbb', lineHeight: 1 }}>
+                {i === 0 ? '' : h === 12 ? '12p' : h > 12 ? `${h - 12}p` : `${h}a`}
+              </div>
             );
           })}
-        </>
-      ))}
+        </div>
+
+        {/* Day columns */}
+        {weekDates.map(date => {
+          const selOnThisDay = selectedRange && isSameDay(selectedRange.start, date);
+          const dragOnThisDay = drag && isSameDay(drag.day, date);
+
+          const toTopPct = (min: number) =>
+            ((min - GRID_DAY_START * 60) / (GRID_TOTAL_HOURS * 60)) * 100;
+
+          const selStartPct = selOnThisDay
+            ? toTopPct(selectedRange!.start.getHours() * 60 + selectedRange!.start.getMinutes())
+            : 0;
+          const selEndPct = selOnThisDay
+            ? toTopPct(selectedRange!.end.getHours() * 60 + selectedRange!.end.getMinutes())
+            : 0;
+
+          const dragStartMin = drag ? Math.min(drag.startMin, drag.endMin) : 0;
+          const dragEndMin = drag ? Math.max(drag.startMin, drag.endMin) : 0;
+          const dragStartPct = dragOnThisDay ? toTopPct(dragStartMin) : 0;
+          const dragEndPct = dragOnThisDay ? toTopPct(dragEndMin) : 0;
+
+          const busyForDay = allBlocks.map(blocks => getDayBusy(date, blocks));
+          const numParticipants = allBlocks.length;
+
+          return (
+            <div
+              key={date.toISOString()}
+              onMouseDown={e => handleMouseDown(e, date)}
+              style={{
+                flex: 1,
+                height: GRID_H,
+                backgroundColor: '#daf5b0',
+                position: 'relative',
+                cursor: 'crosshair',
+                userSelect: 'none',
+                borderRadius: 4,
+                overflow: 'hidden',
+              }}
+            >
+              <WeekGridLines />
+
+              {/* Busy blocks per participant */}
+              {busyForDay.map((segs, pIdx) =>
+                segs.map((seg, j) => {
+                  const startClamped = Math.max(seg.startMin, GRID_DAY_START * 60);
+                  const endClamped = Math.min(seg.endMin, GRID_DAY_END * 60);
+                  if (endClamped <= startClamped) return null;
+                  const top = toTopPct(startClamped);
+                  const height = toTopPct(endClamped) - top;
+                  const colWidth = numParticipants > 0 ? 100 / numParticipants : 100;
+                  return (
+                    <div key={`${pIdx}-${j}`} style={{
+                      position: 'absolute',
+                      top: `${top}%`,
+                      height: `${height}%`,
+                      left: `${pIdx * colWidth}%`,
+                      width: `${colWidth}%`,
+                      backgroundColor: PARTICIPANT_COLORS[pIdx % PARTICIPANT_COLORS.length],
+                      opacity: 0.5,
+                      pointerEvents: 'none',
+                    }} />
+                  );
+                })
+              )}
+
+              {/* Selection overlay */}
+              {selOnThisDay && selEndPct > selStartPct && (
+                <div style={{
+                  position: 'absolute',
+                  top: `${selStartPct}%`,
+                  height: `${selEndPct - selStartPct}%`,
+                  left: 0, right: 0,
+                  backgroundColor: 'rgba(74,128,0,0.2)',
+                  border: '2px solid #4a8000',
+                  borderRadius: 3,
+                  pointerEvents: 'none',
+                }} />
+              )}
+
+              {/* Drag preview */}
+              {dragOnThisDay && dragEndPct > dragStartPct && (
+                <div style={{
+                  position: 'absolute',
+                  top: `${dragStartPct}%`,
+                  height: `${dragEndPct - dragStartPct}%`,
+                  left: 0, right: 0,
+                  backgroundColor: 'rgba(74,128,0,0.25)',
+                  border: '2px solid #4a8000',
+                  borderRadius: 3,
+                  pointerEvents: 'none',
+                }} />
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -479,7 +644,6 @@ function ArcClockView({
 
 function RoomContent() {
   const params = useParams();
-  const searchParams = useSearchParams();
   const router = useRouter();
   const code = (params.code as string).toUpperCase();
 
@@ -558,9 +722,7 @@ function RoomContent() {
   const handleSlotClick = (slot: { start: Date; end: Date }) => {
     setSelectedRange(prev => {
       if (!prev) return { start: slot.start, end: slot.end };
-      // Deselect if clicking same single slot
       if (prev.start.getTime() === slot.start.getTime() && prev.end.getTime() === slot.end.getTime()) return null;
-      // Extend range to include the new slot
       return {
         start: slot.start < prev.start ? slot.start : prev.start,
         end: slot.end > prev.end ? slot.end : prev.end,
@@ -568,6 +730,12 @@ function RoomContent() {
     });
     setProposed(false);
     setSelectedDate(slot.start);
+  };
+
+  const handleRangeChange = (range: SelectedRange) => {
+    setSelectedRange(range);
+    setProposed(false);
+    if (range) setSelectedDate(range.start);
   };
 
   const handleJoin = () => router.push(`/connect?room=${code}`);
@@ -665,7 +833,7 @@ function RoomContent() {
               {!isConnected && <button onClick={handleJoin} style={{ fontSize: 19, color: '#4a8000', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Be the first to join →</button>}
             </div>
           ) : viewMode === 'week' ? (
-            <WeekView weekDates={weekDates} allBlocks={allBlocks} onSlotClick={handleSlotClick} selectedRange={selectedRange} />
+            <WeekView weekDates={weekDates} allBlocks={allBlocks} selectedRange={selectedRange} onRangeChange={handleRangeChange} />
           ) : dailyView === 'swimlane' ? (
             <SwimLaneView date={selectedDate} participants={participants} allBlocks={allBlocks} onSlotClick={handleSlotClick} selectedRange={selectedRange} />
           ) : dailyView === 'grid' ? (
