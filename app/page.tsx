@@ -1,3 +1,5 @@
+import WeekDemo from './components/WeekDemo';
+
 export default function Home() {
   return (
     <main style={{ minHeight: '100vh', backgroundColor: '#0a0a0a', color: 'white', fontFamily: 'system-ui, sans-serif' }}>
@@ -37,35 +39,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Preview card */}
-        <div style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 24, padding: 28 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>When you are both free</span>
-            <span style={{ fontSize: 12, backgroundColor: 'rgba(200,249,122,0.1)', color: '#c8f97a', border: '1px solid rgba(200,249,122,0.2)', borderRadius: 999, padding: '4px 12px' }}>14 slots found</span>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 16 }}>
-            {['M','T','W','T','F','S','S'].map((d, i) => (
-              <div key={i} style={{ textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.25)', paddingBottom: 6 }}>{d}</div>
-            ))}
-            {Array.from({ length: 28 }, (_, i) => {
-              const bright = [2,9,10,16,23].includes(i);
-              const green = [1,3,8,15,22].includes(i);
-              const blue = [4,11,17,24].includes(i);
-              return (
-                <div key={i} style={{
-                  height: 28, borderRadius: 6,
-                  backgroundColor: bright ? '#c8f97a' : green ? '#2d6e0f' : blue ? '#0a1a3a' : 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${bright ? '#c8f97a' : green ? 'rgba(74,158,26,0.5)' : blue ? 'rgba(16,45,90,0.5)' : 'rgba(255,255,255,0.05)'}`,
-                }} />
-              );
-            })}
-          </div>
-          <div style={{ display: 'flex', gap: 16, fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: '#c8f97a', display: 'inline-block' }}></span>Both free</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: '#2d6e0f', display: 'inline-block' }}></span>You free</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: '#0a1a3a', border: '1px solid #102d5a', display: 'inline-block' }}></span>Them free</span>
-          </div>
-        </div>
+        {/* Live demo */}
+        <WeekDemo />
       </section>
 
       {/* How it works */}
