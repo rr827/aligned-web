@@ -76,14 +76,15 @@ function rankSlots(
   return slots.sort((a, b) => b.score - a.score).slice(0, 12);
 }
 
-// Teal opacity by overlap fraction
-function weekCellTeal(count: number, total: number): string {
+// Bright green opacity by overlap fraction
+function weekCellGreen(count: number, total: number): string {
   if (count === 0 || total === 0) return 'transparent';
   const frac = count / total;
-  // 1 person free = faint teal, all free = deep teal
-  const alpha = 0.15 + frac * 0.75;
-  return `rgba(0, 160, 140, ${alpha.toFixed(2)})`;
+  const alpha = 0.18 + frac * 0.62;
+  return `rgba(80, 200, 60, ${alpha.toFixed(2)})`;
 }
+
+type SelectedRange = { start: Date; end: Date } | null;
 
 // 30-min slots, 6am–10pm = 32 slots
 const HALF_HOURS = Array.from({ length: 32 }, (_, i) => ({
@@ -98,12 +99,12 @@ const PARTICIPANT_COLORS = ['#4a8000', '#1c3461', '#7a3800', '#5a0a5a', '#0a4a5a
 // ── Sub-components ─────────────────────────────────────────────────────────
 
 function WeekView({
-  weekDates, allBlocks, onSlotClick, selectedSlot,
+  weekDates, allBlocks, onSlotClick, selectedRange,
 }: {
   weekDates: Date[];
   allBlocks: BusyBlock[][];
   onSlotClick: (slot: { start: Date; end: Date }) => void;
-  selectedSlot: { start: Date; end: Date } | null;
+  selectedRange: SelectedRange;
 }) {
   const total = allBlocks.length;
 
@@ -130,14 +131,16 @@ function WeekView({
             const slotEnd = addMinutes(slotStart, 30);
             const count = overlapCount(slotStart, slotEnd, allBlocks);
             const isPast = slotStart < new Date();
-            const isSelected = selectedSlot?.start.getTime() === slotStart.getTime();
+            const isInRange = selectedRange
+              ? slotStart >= selectedRange.start && slotEnd <= selectedRange.end
+              : false;
             const isFullOverlap = count === total && total > 0;
-            const bg = isSelected ? '#4a8000' : isPast ? '#f0f0ea' : weekCellTeal(count, total);
+            const bg = isInRange ? 'rgba(74,128,0,0.14)' : isPast ? '#f0f0ea' : weekCellGreen(count, total);
             return (
               <button key={date.toISOString() + h + m}
                 onClick={() => !isPast && onSlotClick({ start: slotStart, end: slotEnd })}
                 title={count > 0 ? `${count}/${total} free` : 'Busy'}
-                style={{ height: 22, borderRadius: 4, border: isSelected ? '1.5px solid #4a8000' : isFullOverlap ? '1.5px solid rgba(0,160,140,0.4)' : '1px solid rgba(0,0,0,0.04)', backgroundColor: bg, cursor: isPast ? 'default' : 'pointer', opacity: isPast ? 0.35 : 1, transition: 'background 0.1s' }} />
+                style={{ height: 22, borderRadius: 4, border: isInRange ? '2px solid #4a8000' : isFullOverlap ? '1.5px solid rgba(80,200,60,0.5)' : '1px solid rgba(0,0,0,0.04)', backgroundColor: bg, cursor: isPast ? 'default' : 'pointer', opacity: isPast ? 0.35 : 1, transition: 'background 0.1s' }} />
             );
           })}
         </>
@@ -147,12 +150,13 @@ function WeekView({
 }
 
 function SwimLaneView({
-  date, participants, allBlocks, onSlotClick,
+  date, participants, allBlocks, onSlotClick, selectedRange,
 }: {
   date: Date;
   participants: AlignedPayload[];
   allBlocks: BusyBlock[][];
   onSlotClick: (slot: { start: Date; end: Date }) => void;
+  selectedRange: SelectedRange;
 }) {
   const [hoverMin, setHoverMin] = useState<number | null>(null);
   const DAY_START = 6 * 60, DAY_END = 22 * 60, DURATION = DAY_END - DAY_START;
@@ -213,7 +217,7 @@ function SwimLaneView({
                   setHoverMin(Math.round((DAY_START + pct * DURATION) / 30) * 30);
                 }}
                 onMouseLeave={() => setHoverMin(null)}
-                style={{ flex: 1, height: 36, borderRadius: 8, backgroundColor: '#e8f5e0', position: 'relative', cursor: 'pointer', overflow: 'hidden' }}>
+                style={{ flex: 1, height: 36, borderRadius: 8, backgroundColor: '#d8f5b8', position: 'relative', cursor: 'pointer', overflow: 'hidden' }}>
                 {/* Busy blocks */}
                 {busySegments.map((seg, j) => (
                   <div key={j} style={{
@@ -226,6 +230,24 @@ function SwimLaneView({
                     borderRadius: 4,
                   }} />
                 ))}
+                {/* Selection overlay */}
+                {selectedRange && (() => {
+                  const selStartMin = selectedRange.start.getHours() * 60 + selectedRange.start.getMinutes();
+                  const selEndMin = selectedRange.end.getHours() * 60 + selectedRange.end.getMinutes();
+                  if (selStartMin >= DAY_END || selEndMin <= DAY_START) return null;
+                  return (
+                    <div style={{
+                      position: 'absolute',
+                      left: `${toPercent(Math.max(selStartMin, DAY_START))}%`,
+                      width: `${toPercent(Math.min(selEndMin, DAY_END)) - toPercent(Math.max(selStartMin, DAY_START))}%`,
+                      top: 0, bottom: 0,
+                      backgroundColor: 'rgba(74,128,0,0.25)',
+                      border: '2px solid #4a8000',
+                      borderRadius: 4,
+                      pointerEvents: 'none',
+                    }} />
+                  );
+                })()}
               </div>
             </div>
           );
@@ -264,12 +286,13 @@ function SwimLaneView({
 }
 
 function GridDayView({
-  date, participants, allBlocks, onSlotClick,
+  date, participants, allBlocks, onSlotClick, selectedRange,
 }: {
   date: Date;
   participants: AlignedPayload[];
   allBlocks: BusyBlock[][];
   onSlotClick: (slot: { start: Date; end: Date }) => void;
+  selectedRange: SelectedRange;
 }) {
   return (
     <div style={{ overflowX: 'auto' }}>
@@ -288,6 +311,9 @@ function GridDayView({
           const slotEnd = addMinutes(slotStart, 60);
           const isPast = slotStart < new Date();
           const allFree = overlapCount(slotStart, slotEnd, allBlocks) === participants.length && participants.length > 0;
+          const isInRange = selectedRange
+            ? slotStart >= selectedRange.start && slotEnd <= selectedRange.end
+            : false;
           return (
             <>
               <div key={`lbl-${hour}`} style={{ fontSize: 15, color: '#aaa', textAlign: 'right', paddingRight: 6, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
@@ -300,8 +326,8 @@ function GridDayView({
                 });
                 return (
                   <button key={i}
-                    onClick={() => !isPast && allFree && onSlotClick({ start: slotStart, end: slotEnd })}
-                    style={{ height: 32, borderRadius: 6, border: allFree ? '1.5px solid rgba(0,160,140,0.4)' : '1px solid rgba(0,0,0,0.05)', backgroundColor: isPast ? '#f5f5f0' : busy ? `${PARTICIPANT_COLORS[i % PARTICIPANT_COLORS.length]}30` : '#e8f5e0', cursor: allFree && !isPast ? 'pointer' : 'default', opacity: isPast ? 0.5 : 1 }} />
+                    onClick={() => !isPast && onSlotClick({ start: slotStart, end: slotEnd })}
+                    style={{ height: 32, borderRadius: 6, border: isInRange ? '2px solid #4a8000' : allFree ? '1.5px solid rgba(80,200,60,0.5)' : '1px solid rgba(0,0,0,0.05)', backgroundColor: isInRange ? 'rgba(74,128,0,0.14)' : isPast ? '#f5f5f0' : busy ? `${PARTICIPANT_COLORS[i % PARTICIPANT_COLORS.length]}30` : '#d8f5b8', cursor: !isPast ? 'pointer' : 'default', opacity: isPast ? 0.5 : 1 }} />
                 );
               })}
             </>
@@ -471,7 +497,7 @@ function RoomContent() {
   const [dailyView, setDailyView] = useState<DailyView>('swimlane');
 
   const [rankedSlots, setRankedSlots] = useState<{ start: Date; end: Date; count: number; score: number }[]>([]);
-  const [selectedSlot, setSelectedSlot] = useState<{ start: Date; end: Date } | null>(null);
+  const [selectedRange, setSelectedRange] = useState<SelectedRange>(null);
   const [proposing, setProposing] = useState(false);
   const [proposed, setProposed] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -517,10 +543,10 @@ function RoomContent() {
   };
 
   const handlePropose = async () => {
-    if (!selectedSlot || myIndex === null) return;
+    if (!selectedRange || myIndex === null) return;
     setProposing(true);
     try {
-      await proposeTime(code, myIndex, selectedSlot.start.toISOString(), selectedSlot.end.toISOString());
+      await proposeTime(code, myIndex, selectedRange.start.toISOString(), selectedRange.end.toISOString());
       setProposed(true);
     } catch {
       alert('Could not save proposal. Try again.');
@@ -530,7 +556,16 @@ function RoomContent() {
   };
 
   const handleSlotClick = (slot: { start: Date; end: Date }) => {
-    setSelectedSlot(prev => prev?.start.getTime() === slot.start.getTime() ? null : slot);
+    setSelectedRange(prev => {
+      if (!prev) return { start: slot.start, end: slot.end };
+      // Deselect if clicking same single slot
+      if (prev.start.getTime() === slot.start.getTime() && prev.end.getTime() === slot.end.getTime()) return null;
+      // Extend range to include the new slot
+      return {
+        start: slot.start < prev.start ? slot.start : prev.start,
+        end: slot.end > prev.end ? slot.end : prev.end,
+      };
+    });
     setProposed(false);
     setSelectedDate(slot.start);
   };
@@ -630,11 +665,11 @@ function RoomContent() {
               {!isConnected && <button onClick={handleJoin} style={{ fontSize: 19, color: '#4a8000', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Be the first to join →</button>}
             </div>
           ) : viewMode === 'week' ? (
-            <WeekView weekDates={weekDates} allBlocks={allBlocks} onSlotClick={handleSlotClick} selectedSlot={selectedSlot} />
+            <WeekView weekDates={weekDates} allBlocks={allBlocks} onSlotClick={handleSlotClick} selectedRange={selectedRange} />
           ) : dailyView === 'swimlane' ? (
-            <SwimLaneView date={selectedDate} participants={participants} allBlocks={allBlocks} onSlotClick={handleSlotClick} />
+            <SwimLaneView date={selectedDate} participants={participants} allBlocks={allBlocks} onSlotClick={handleSlotClick} selectedRange={selectedRange} />
           ) : dailyView === 'grid' ? (
-            <GridDayView date={selectedDate} participants={participants} allBlocks={allBlocks} onSlotClick={handleSlotClick} />
+            <GridDayView date={selectedDate} participants={participants} allBlocks={allBlocks} onSlotClick={handleSlotClick} selectedRange={selectedRange} />
           ) : (
             <ArcClockView date={selectedDate} participants={participants} allBlocks={allBlocks} onSlotClick={handleSlotClick} />
           )}
@@ -687,7 +722,9 @@ function RoomContent() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {rankedSlots.map((slot, i) => {
-                  const isSelected = selectedSlot?.start.getTime() === slot.start.getTime();
+                  const isSelected = selectedRange
+                    ? slot.start >= selectedRange.start && slot.end <= selectedRange.end
+                    : false;
                   return (
                     <button key={i} onClick={() => handleSlotClick(slot)}
                       style={{ padding: '9px 12px', backgroundColor: isSelected ? 'rgba(74,128,0,0.08)' : '#fff', border: `1px solid ${isSelected ? '#4a8000' : '#e2e2dc'}`, borderRadius: 9, display: 'flex', flexDirection: 'column', gap: 2, cursor: 'pointer', textAlign: 'left', width: '100%' }}>
@@ -702,11 +739,11 @@ function RoomContent() {
           </div>
 
           {/* Propose selected slot */}
-          {selectedSlot && myIndex !== null && (
+          {selectedRange && myIndex !== null && (
             <div style={{ margin: '0 20px 20px', padding: '12px', backgroundColor: 'rgba(74,128,0,0.06)', border: '1px solid rgba(74,128,0,0.2)', borderRadius: 11 }}>
-              <p style={{ fontSize: 16, color: '#555', marginBottom: 3 }}>{format(selectedSlot.start, 'EEE, MMM d')}</p>
+              <p style={{ fontSize: 16, color: '#555', marginBottom: 3 }}>{format(selectedRange.start, 'EEE, MMM d')}</p>
               <p style={{ fontSize: 19, fontWeight: 600, color: '#1a2e0a', marginBottom: 10 }}>
-                {format(selectedSlot.start, 'h:mm a')} – {format(selectedSlot.end, 'h:mm a')}
+                {format(selectedRange.start, 'h:mm a')} – {format(selectedRange.end, 'h:mm a')}
               </p>
               {proposed ? (
                 <p style={{ fontSize: 18, color: '#4a8000', fontWeight: 600 }}>✓ Proposal shared!</p>
