@@ -95,3 +95,17 @@ export async function proposeTime(
     .eq('code', code.toUpperCase());
   if (error) throw new Error(error.message);
 }
+
+export async function acceptProposal(code: string, proposalIndex: number): Promise<void> {
+  const supabase = db();
+  const room = await getRoom(code);
+  if (!room) throw new Error('Room not found');
+  const updated = room.proposals.map((p, i) =>
+    i === proposalIndex ? { ...p, status: 'accepted' as const } : p
+  );
+  const { error } = await supabase
+    .from('rooms')
+    .update({ proposals: updated })
+    .eq('code', code.toUpperCase());
+  if (error) throw new Error(error.message);
+}

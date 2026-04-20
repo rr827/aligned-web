@@ -6,9 +6,9 @@ import {
   format, addDays, startOfWeek, isSameDay, parseISO, addMinutes,
 } from 'date-fns';
 import { loadToken } from '@/lib/auth';
-import { BusyBlock } from '@/lib/calendar';
+import { BusyBlock, createCalendarEvent } from '@/lib/calendar';
 import { decodePayload, AlignedPayload, buildRoomLink } from '@/lib/payload';
-import { getRoom, proposeTime, RoomRow } from '@/lib/room';
+import { getRoom, proposeTime, acceptProposal, RoomRow } from '@/lib/room';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -802,6 +802,7 @@ function RoomContent() {
   const [proposing, setProposing] = useState(false);
   const [proposed, setProposed] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [acceptingIdx, setAcceptingIdx] = useState<number | null>(null);
 
   // Manual time entry
   const [manualDate, setManualDate] = useState('');
@@ -858,6 +859,25 @@ function RoomContent() {
       alert('Could not save proposal. Try again.');
     } finally {
       setProposing(false);
+    }
+  };
+
+  const handleAccept = async (proposalIndex: number, startTime: string, endTime: string) => {
+    setAcceptingIdx(proposalIndex);
+    try {
+      await acceptProposal(code, proposalIndex);
+      // Reload room to show updated status
+      const data = await getRoom(code);
+      if (data) setRoom(data);
+      // Add to this user's calendar if they have a token
+      const token = loadToken();
+      if (token) {
+        await createCalendarEvent(token, 'Meeting', new Date(startTime), new Date(endTime));
+      }
+    } catch {
+      alert('Could not accept proposal. Try again.');
+    } finally {
+      setAcceptingIdx(null);
     }
   };
 
@@ -1006,16 +1026,44 @@ function RoomContent() {
           {room?.proposals && room.proposals.length > 0 && (
             <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e2dc' }}>
               <p style={{ fontSize: 15, color: '#555', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 10 }}>Proposals</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {room.proposals.map((prop, i) => (
-                  <div key={i} style={{ padding: '8px 12px', borderRadius: 9, backgroundColor: '#fff', border: '1px solid #e0e0d8', fontSize: 17 }}>
-                    <p style={{ color: '#888', marginBottom: 2 }}>Person {prop.proposer_index + 1} suggests</p>
-                    <p style={{ fontWeight: 600, color: '#1a2e0a' }}>
-                      {format(parseISO(prop.start_time), 'EEE MMM d, h:mm a')} – {format(parseISO(prop.end_time), 'h:mm a')}
-                    </p>
-                    <span style={{ fontSize: 15, color: prop.status === 'pending' ? '#888' : '#4a8000', textTransform: 'capitalize' }}>{prop.status}</span>
-                  </div>
-                ))}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {room.proposals.map((prop, i) => {
+                  const isAccepted = prop.status === 'accepted';
+                  const canAccept = prop.status === 'pending' && myIndex !== null && prop.proposer_index !== myIndex;
+                  const hasToken = !!loadToken();
+                  return (
+                    <div key={i} style={{ padding: '10px 12px', borderRadius: 9, backgroundColor: isAccepted ? 'rgba(74,128,0,0.06)' : '#fff', border: `1px solid ${isAccepted ? 'rgba(74,128,0,0.2)' : '#e0e0d8'}` }}>
+                      <p style={{ fontSize: 14, color: '#888', marginBottom: 2 }}>Person {prop.proposer_index + 1} suggests</p>
+                      <p style={{ fontSize: 16, fontWeight: 600, color: '#1a2e0a', marginBottom: 6 }}>
+                        {format(parseISO(prop.start_time), 'EEE MMM d, h:mm a')} – {format(parseISO(prop.end_time), 'h:mm a')}
+                      </p>
+                      {isAccepted ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          <span style={{ fontSize: 14, color: '#4a8000', fontWeight: 600 }}>✓ Accepted</span>
+                          {hasToken && (
+                            <button
+                              onClick={() => {
+                                const token = loadToken();
+                                if (token) createCalendarEvent(token, 'Meeting', new Date(prop.start_time), new Date(prop.end_time)).catch(() => alert('Could not add to calendar.'));
+                              }}
+                              style={{ fontSize: 14, color: '#4a8000', background: 'none', border: '1px solid #4a8000', borderRadius: 7, padding: '5px 10px', cursor: 'pointer', fontWeight: 500 }}>
+                              Add to calendar
+                            </button>
+                          )}
+                        </div>
+                      ) : canAccept ? (
+                        <button
+                          onClick={() => handleAccept(i, prop.start_time, prop.end_time)}
+                          disabled={acceptingIdx === i}
+                          style={{ width: '100%', backgroundColor: '#4a8000', color: '#fff', borderRadius: 7, padding: '7px', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', opacity: acceptingIdx === i ? 0.6 : 1 }}>
+                          {acceptingIdx === i ? 'Accepting…' : 'Accept & add to calendar'}
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: 14, color: '#aaa', textTransform: 'capitalize' }}>{prop.status}</span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
