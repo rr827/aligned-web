@@ -315,26 +315,80 @@ function WeekView({
 }
 
 function SwimLaneView({
-  date, participants, allBlocks, onSlotClick, selectedRange,
+  date, participants, allBlocks, onRangeChange, selectedRange,
 }: {
   date: Date;
   participants: AlignedPayload[];
   allBlocks: BusyBlock[][];
-  onSlotClick: (slot: { start: Date; end: Date }) => void;
+  onRangeChange: (range: SelectedRange) => void;
   selectedRange: SelectedRange;
 }) {
-  const [hoverMin, setHoverMin] = useState<number | null>(null);
   const DAY_START = 6 * 60, DAY_END = 22 * 60, DURATION = DAY_END - DAY_START;
-
   const toPercent = (min: number) => ((min - DAY_START) / DURATION) * 100;
 
-  // Compute overlap bands (all participants free)
+  const [drag, setDrag] = useState<{ startMin: number; endMin: number } | null>(null);
+  const dragStateRef = useRef<{ startMin: number; endMin: number } | null>(null);
+  const dragBarRef = useRef<HTMLDivElement | null>(null);
+  const onRangeChangeRef = useRef(onRangeChange);
+  useEffect(() => { onRangeChangeRef.current = onRangeChange; });
+  const dateRef = useRef(date);
+  useEffect(() => { dateRef.current = date; });
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!dragStateRef.current || !dragBarRef.current) return;
+      const rect = dragBarRef.current.getBoundingClientRect();
+      const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+      const raw = DAY_START + (x / rect.width) * DURATION;
+      const min = Math.max(DAY_START, Math.min(DAY_END, snapTo5(raw)));
+      const updated = { ...dragStateRef.current, endMin: min };
+      dragStateRef.current = updated;
+      setDrag({ ...updated });
+    };
+    const onUp = () => {
+      const d = dragStateRef.current;
+      if (!d) return;
+      const s = Math.min(d.startMin, d.endMin);
+      const e2 = Math.max(d.startMin, d.endMin);
+      if (e2 - s < 5) {
+        onRangeChangeRef.current(null);
+      } else {
+        const day = dateRef.current;
+        const start = new Date(day); start.setHours(Math.floor(s / 60), s % 60, 0, 0);
+        const end = new Date(day); end.setHours(Math.floor(e2 / 60), e2 % 60, 0, 0);
+        onRangeChangeRef.current({ start, end });
+      }
+      dragStateRef.current = null;
+      dragBarRef.current = null;
+      setDrag(null);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, []);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const barEl = e.currentTarget;
+    const rect = barEl.getBoundingClientRect();
+    const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+    const raw = DAY_START + (x / rect.width) * DURATION;
+    const min = Math.max(DAY_START, Math.min(DAY_END, snapTo5(raw)));
+    const newDrag = { startMin: min, endMin: min };
+    dragStateRef.current = newDrag;
+    dragBarRef.current = barEl;
+    setDrag(newDrag);
+  };
+
+  // Overlap bands
   const overlapBands: { startMin: number; endMin: number }[] = [];
   if (participants.length > 0) {
     for (let m = DAY_START; m < DAY_END; m += 15) {
       const slotStart = new Date(date); slotStart.setHours(Math.floor(m / 60), m % 60, 0, 0);
-      const slotEnd = addMinutes(slotStart, 15);
-      if (overlapCount(slotStart, slotEnd, allBlocks) === participants.length) {
+      if (overlapCount(slotStart, addMinutes(slotStart, 15), allBlocks) === participants.length) {
         if (overlapBands.length && overlapBands[overlapBands.length - 1].endMin === m) {
           overlapBands[overlapBands.length - 1].endMin = m + 15;
         } else {
@@ -344,14 +398,14 @@ function SwimLaneView({
     }
   }
 
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const pct = (e.clientX - rect.left) / rect.width;
-    const clickMin = DAY_START + pct * DURATION;
-    const roundedMin = Math.round(clickMin / 30) * 30;
-    const slotStart = new Date(date); slotStart.setHours(Math.floor(roundedMin / 60), roundedMin % 60, 0, 0);
-    onSlotClick({ start: slotStart, end: addMinutes(slotStart, 60) });
-  };
+  // Drag preview bounds
+  const dragStartMin = drag ? Math.min(drag.startMin, drag.endMin) : 0;
+  const dragEndMin = drag ? Math.max(drag.startMin, drag.endMin) : 0;
+
+  // Selection bounds (only show if date matches)
+  const selStartMin = selectedRange ? selectedRange.start.getHours() * 60 + selectedRange.start.getMinutes() : 0;
+  const selEndMin = selectedRange ? selectedRange.end.getHours() * 60 + selectedRange.end.getMinutes() : 0;
+  const selVisible = selectedRange !== null && selEndMin > DAY_START && selStartMin < DAY_END;
 
   return (
     <div style={{ overflowX: 'auto' }}>
@@ -375,14 +429,8 @@ function SwimLaneView({
                 Person {i + 1}
               </div>
               <div
-                onClick={handleClick}
-                onMouseMove={e => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const pct = (e.clientX - rect.left) / rect.width;
-                  setHoverMin(Math.round((DAY_START + pct * DURATION) / 30) * 30);
-                }}
-                onMouseLeave={() => setHoverMin(null)}
-                style={{ flex: 1, height: 36, borderRadius: 8, backgroundColor: '#d8f5b8', position: 'relative', cursor: 'pointer', overflow: 'hidden' }}>
+                onMouseDown={handleMouseDown}
+                style={{ flex: 1, height: 40, borderRadius: 8, backgroundColor: '#d8f5b8', position: 'relative', cursor: 'crosshair', overflow: 'hidden', userSelect: 'none' }}>
                 {/* Busy blocks */}
                 {busySegments.map((seg, j) => (
                   <div key={j} style={{
@@ -391,28 +439,36 @@ function SwimLaneView({
                     width: `${toPercent(seg.endMin) - toPercent(seg.startMin)}%`,
                     top: 0, bottom: 0,
                     backgroundColor: PARTICIPANT_COLORS[i % PARTICIPANT_COLORS.length],
-                    opacity: 0.7,
-                    borderRadius: 4,
+                    opacity: 0.65,
+                    pointerEvents: 'none',
                   }} />
                 ))}
                 {/* Selection overlay */}
-                {selectedRange && (() => {
-                  const selStartMin = selectedRange.start.getHours() * 60 + selectedRange.start.getMinutes();
-                  const selEndMin = selectedRange.end.getHours() * 60 + selectedRange.end.getMinutes();
-                  if (selStartMin >= DAY_END || selEndMin <= DAY_START) return null;
-                  return (
-                    <div style={{
-                      position: 'absolute',
-                      left: `${toPercent(Math.max(selStartMin, DAY_START))}%`,
-                      width: `${toPercent(Math.min(selEndMin, DAY_END)) - toPercent(Math.max(selStartMin, DAY_START))}%`,
-                      top: 0, bottom: 0,
-                      backgroundColor: 'rgba(74,128,0,0.25)',
-                      border: '2px solid #4a8000',
-                      borderRadius: 4,
-                      pointerEvents: 'none',
-                    }} />
-                  );
-                })()}
+                {selVisible && (
+                  <div style={{
+                    position: 'absolute',
+                    left: `${toPercent(Math.max(selStartMin, DAY_START))}%`,
+                    width: `${toPercent(Math.min(selEndMin, DAY_END)) - toPercent(Math.max(selStartMin, DAY_START))}%`,
+                    top: 0, bottom: 0,
+                    backgroundColor: 'rgba(74,128,0,0.2)',
+                    border: '2px solid #4a8000',
+                    borderRadius: 4,
+                    pointerEvents: 'none',
+                  }} />
+                )}
+                {/* Drag preview */}
+                {drag && dragEndMin > dragStartMin && (
+                  <div style={{
+                    position: 'absolute',
+                    left: `${toPercent(dragStartMin)}%`,
+                    width: `${toPercent(dragEndMin) - toPercent(dragStartMin)}%`,
+                    top: 0, bottom: 0,
+                    backgroundColor: 'rgba(74,128,0,0.25)',
+                    border: '2px solid #4a8000',
+                    borderRadius: 4,
+                    pointerEvents: 'none',
+                  }} />
+                )}
               </div>
             </div>
           );
@@ -432,17 +488,15 @@ function SwimLaneView({
                 borderRadius: 3,
               }} />
             ))}
-            {/* Hover cursor */}
-            {hoverMin !== null && hoverMin >= DAY_START && hoverMin <= DAY_END && (
-              <div style={{ position: 'absolute', left: `${toPercent(hoverMin)}%`, top: 0, bottom: 0, width: 1, backgroundColor: '#4a8000', opacity: 0.5 }} />
-            )}
           </div>
         </div>
 
-        {/* Hover time label */}
-        {hoverMin !== null && (
-          <div style={{ marginLeft: 100, fontSize: 16, color: '#4a8000' }}>
-            {format(new Date(date).setHours(Math.floor(hoverMin / 60), hoverMin % 60), 'h:mm a')}
+        {/* Live drag time label */}
+        {drag && dragEndMin > dragStartMin && (
+          <div style={{ marginLeft: 100, fontSize: 15, color: '#4a8000', fontWeight: 500 }}>
+            {format(new Date(date).setHours(Math.floor(dragStartMin / 60), dragStartMin % 60), 'h:mm a')}
+            {' – '}
+            {format(new Date(date).setHours(Math.floor(dragEndMin / 60), dragEndMin % 60), 'h:mm a')}
           </div>
         )}
       </div>
@@ -504,12 +558,11 @@ function GridDayView({
 }
 
 function ArcClockView({
-  date, participants, allBlocks, onSlotClick,
+  date, participants, allBlocks,
 }: {
   date: Date;
   participants: AlignedPayload[];
   allBlocks: BusyBlock[][];
-  onSlotClick: (slot: { start: Date; end: Date }) => void;
 }) {
   const svgSize = 300;
   const cx = svgSize / 2, cy = svgSize / 2;
@@ -530,21 +583,9 @@ function ArcClockView({
     return `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`;
   }
 
-  const handleSvgClick = (e: React.MouseEvent<SVGSVGElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const mx = e.clientX - rect.left - cx;
-    const my = e.clientY - rect.top - cy;
-    let angle = (Math.atan2(my, mx) * 180) / Math.PI + 90; // 0 = top
-    if (angle < 0) angle += 360;
-    const hour = 6 + (angle / 360) * 24;
-    const h = Math.floor(hour), m = Math.round((hour - h) * 60 / 30) * 30;
-    const slotStart = new Date(date); slotStart.setHours(h, m, 0, 0);
-    onSlotClick({ start: slotStart, end: addMinutes(slotStart, 60) });
-  };
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-      <svg width={svgSize} height={svgSize} onClick={handleSvgClick} style={{ cursor: 'pointer' }}>
+      <svg width={svgSize} height={svgSize} style={{ cursor: 'default' }}>
         {/* Background circle */}
         <circle cx={cx} cy={cy} r={outerR + 6} fill="#f0f0ea" />
 
@@ -623,7 +664,7 @@ function ArcClockView({
 
         {/* Center label */}
         <text x={cx} y={cy - 6} textAnchor="middle" fontSize={15} fill="#4a8000" fontWeight={600}>
-          {participants.length > 0 ? 'Tap to propose' : ''}
+          {participants.length > 0 ? 'Group overview' : ''}
         </text>
         <text x={cx} y={cy + 12} textAnchor="middle" fontSize={13} fill="#888">
           {format(date, 'EEE, MMM d')}
@@ -665,6 +706,11 @@ function RoomContent() {
   const [proposing, setProposing] = useState(false);
   const [proposed, setProposed] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Manual time entry
+  const [manualDate, setManualDate] = useState('');
+  const [manualStart, setManualStart] = useState('');
+  const [manualEnd, setManualEnd] = useState('');
 
   const weekDates = getWeekDates(weekBase);
 
@@ -835,11 +881,11 @@ function RoomContent() {
           ) : viewMode === 'week' ? (
             <WeekView weekDates={weekDates} allBlocks={allBlocks} selectedRange={selectedRange} onRangeChange={handleRangeChange} />
           ) : dailyView === 'swimlane' ? (
-            <SwimLaneView date={selectedDate} participants={participants} allBlocks={allBlocks} onSlotClick={handleSlotClick} selectedRange={selectedRange} />
+            <SwimLaneView date={selectedDate} participants={participants} allBlocks={allBlocks} onRangeChange={handleRangeChange} selectedRange={selectedRange} />
           ) : dailyView === 'grid' ? (
             <GridDayView date={selectedDate} participants={participants} allBlocks={allBlocks} onSlotClick={handleSlotClick} selectedRange={selectedRange} />
           ) : (
-            <ArcClockView date={selectedDate} participants={participants} allBlocks={allBlocks} onSlotClick={handleSlotClick} />
+            <ArcClockView date={selectedDate} participants={participants} allBlocks={allBlocks} />
           )}
         </div>
 
@@ -906,13 +952,59 @@ function RoomContent() {
             )}
           </div>
 
+          {/* Manual time entry */}
+          <div style={{ padding: '14px 20px', borderTop: '1px solid #e2e2dc' }}>
+            <p style={{ fontSize: 13, color: '#888', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 10 }}>Set time manually</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <input type="date" title="Date" value={manualDate} onChange={e => setManualDate(e.target.value)}
+                style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #d8d8d0', fontSize: 15, color: '#333', backgroundColor: '#fff', boxSizing: 'border-box' }} />
+              <div style={{ display: 'flex', gap: 6 }}>
+                <input type="time" title="Start time" value={manualStart} onChange={e => setManualStart(e.target.value)}
+                  style={{ flex: 1, padding: '7px 8px', borderRadius: 8, border: '1px solid #d8d8d0', fontSize: 15, color: '#333', backgroundColor: '#fff' }} />
+                <span style={{ color: '#aaa', lineHeight: '34px' }}>–</span>
+                <input type="time" title="End time" value={manualEnd} onChange={e => setManualEnd(e.target.value)}
+                  style={{ flex: 1, padding: '7px 8px', borderRadius: 8, border: '1px solid #d8d8d0', fontSize: 15, color: '#333', backgroundColor: '#fff' }} />
+              </div>
+              <button
+                onClick={() => {
+                  if (!manualDate || !manualStart || !manualEnd) return;
+                  const [y, mo, d] = manualDate.split('-').map(Number);
+                  const [sh, sm] = manualStart.split(':').map(Number);
+                  const [eh, em] = manualEnd.split(':').map(Number);
+                  const start = new Date(y, mo - 1, d, sh, sm, 0, 0);
+                  const end = new Date(y, mo - 1, d, eh, em, 0, 0);
+                  if (end > start) handleRangeChange({ start, end });
+                }}
+                style={{ width: '100%', padding: '8px', borderRadius: 8, border: '1.5px solid #4a8000', backgroundColor: 'transparent', color: '#4a8000', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
+                Apply
+              </button>
+            </div>
+          </div>
+
           {/* Propose selected slot */}
           {selectedRange && myIndex !== null && (
             <div style={{ margin: '0 20px 20px', padding: '12px', backgroundColor: 'rgba(74,128,0,0.06)', border: '1px solid rgba(74,128,0,0.2)', borderRadius: 11 }}>
-              <p style={{ fontSize: 16, color: '#555', marginBottom: 3 }}>{format(selectedRange.start, 'EEE, MMM d')}</p>
-              <p style={{ fontSize: 19, fontWeight: 600, color: '#1a2e0a', marginBottom: 10 }}>
-                {format(selectedRange.start, 'h:mm a')} – {format(selectedRange.end, 'h:mm a')}
-              </p>
+              <p style={{ fontSize: 14, color: '#888', marginBottom: 6 }}>{format(selectedRange.start, 'EEE, MMM d')}</p>
+              {/* Editable start/end times */}
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 10 }}>
+                <input type="time" title="Start time"
+                  value={`${String(selectedRange.start.getHours()).padStart(2,'0')}:${String(selectedRange.start.getMinutes()).padStart(2,'0')}`}
+                  onChange={e => {
+                    const [h, m] = e.target.value.split(':').map(Number);
+                    const next = new Date(selectedRange.start); next.setHours(h, m, 0, 0);
+                    if (next < selectedRange.end) handleRangeChange({ start: next, end: selectedRange.end });
+                  }}
+                  style={{ flex: 1, padding: '6px 8px', borderRadius: 7, border: '1.5px solid #4a8000', fontSize: 15, color: '#1a2e0a', fontWeight: 600, backgroundColor: '#fff' }} />
+                <span style={{ color: '#4a8000', fontWeight: 600 }}>–</span>
+                <input type="time" title="End time"
+                  value={`${String(selectedRange.end.getHours()).padStart(2,'0')}:${String(selectedRange.end.getMinutes()).padStart(2,'0')}`}
+                  onChange={e => {
+                    const [h, m] = e.target.value.split(':').map(Number);
+                    const next = new Date(selectedRange.end); next.setHours(h, m, 0, 0);
+                    if (next > selectedRange.start) handleRangeChange({ start: selectedRange.start, end: next });
+                  }}
+                  style={{ flex: 1, padding: '6px 8px', borderRadius: 7, border: '1.5px solid #4a8000', fontSize: 15, color: '#1a2e0a', fontWeight: 600, backgroundColor: '#fff' }} />
+              </div>
               {proposed ? (
                 <p style={{ fontSize: 18, color: '#4a8000', fontWeight: 600 }}>✓ Proposal shared!</p>
               ) : (
