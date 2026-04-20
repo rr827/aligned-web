@@ -582,7 +582,7 @@ function GridDayView({
   const numParticipants = allBlocks.length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', maxWidth: 500 }}>
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
       {/* Day header */}
       <div style={{ display: 'grid', gridTemplateColumns: '44px 1fr', gap: 2, marginBottom: 4 }}>
         <div />
