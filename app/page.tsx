@@ -116,7 +116,10 @@ export default function Home() {
       <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '32px 0' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 48px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: 18, fontWeight: 300, letterSpacing: '-0.05em', color: 'rgba(255,255,255,0.3)' }}>aligned</span>
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>No data collected. No accounts. Just time.</p>
+          <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>No data collected. No accounts. Just time.</p>
+            <a href="/privacy" style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', textDecoration: 'none' }}>Privacy Policy</a>
+          </div>
         </div>
       </footer>
 
