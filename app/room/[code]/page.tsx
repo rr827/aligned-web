@@ -253,7 +253,7 @@ function WeekView({
             >
               <WeekGridLines />
 
-              {/* Busy blocks per participant */}
+              {/* Busy blocks — each participant stacks a translucent dark layer, darkening with more overlap */}
               {busyForDay.map((segs, pIdx) =>
                 segs.map((seg, j) => {
                   const startClamped = Math.max(seg.startMin, GRID_DAY_START * 60);
@@ -261,16 +261,14 @@ function WeekView({
                   if (endClamped <= startClamped) return null;
                   const top = toTopPct(startClamped);
                   const height = toTopPct(endClamped) - top;
-                  const colWidth = numParticipants > 0 ? 100 / numParticipants : 100;
                   return (
                     <div key={`${pIdx}-${j}`} style={{
                       position: 'absolute',
                       top: `${top}%`,
                       height: `${height}%`,
-                      left: `${pIdx * colWidth}%`,
-                      width: `${colWidth}%`,
-                      backgroundColor: PARTICIPANT_COLORS[pIdx % PARTICIPANT_COLORS.length],
-                      opacity: 0.5,
+                      left: 0,
+                      width: '100%',
+                      backgroundColor: 'rgba(0,0,0,0.18)',
                       pointerEvents: 'none',
                     }} />
                   );
