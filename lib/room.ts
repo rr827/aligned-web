@@ -22,6 +22,21 @@ function db() {
   );
 }
 
+const MAX_PAYLOAD_BYTES = 25_000;
+const MAX_PARTICIPANTS = 10;
+const VALID_CODE = /^[A-Z2-9]{6}$/;
+
+function validateCode(code: string): string {
+  const upper = code.toUpperCase().trim();
+  if (!VALID_CODE.test(upper)) throw new Error('Invalid room code');
+  return upper;
+}
+
+function validatePayload(encodedPayload: string): void {
+  if (encodedPayload.length > MAX_PAYLOAD_BYTES)
+    throw new Error('Payload too large');
+}
+
 function generateCode(): string {
   // Exclude ambiguous chars (0/O, 1/I/L)
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -29,6 +44,7 @@ function generateCode(): string {
 }
 
 export async function createRoom(encodedPayload: string): Promise<string> {
+  validatePayload(encodedPayload);
   const supabase = db();
   const expires_at = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
 
@@ -51,16 +67,20 @@ export async function getRoom(code: string): Promise<RoomRow | null> {
   const { data, error } = await db()
     .from('rooms')
     .select('*')
-    .eq('code', code.toUpperCase())
+    .eq('code', validateCode(code))
     .single();
   if (error || !data) return null;
+  if (new Date(data.expires_at) < new Date()) return null;
   return data as RoomRow;
 }
 
 export async function joinRoom(code: string, encodedPayload: string): Promise<RoomRow> {
+  validatePayload(encodedPayload);
   const supabase = db();
   const room = await getRoom(code);
   if (!room) throw new Error('Room not found');
+  if (room.participants.length >= MAX_PARTICIPANTS)
+    throw new Error('Room is full');
 
   const { data, error } = await supabase
     .from('rooms')

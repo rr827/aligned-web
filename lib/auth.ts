@@ -94,14 +94,13 @@ export async function exchangeCode(
 
 export function saveToken(accessToken: string, expiresIn: number): void {
   const expiry = Date.now() + expiresIn * 1000;
-  localStorage.setItem(TOKEN_KEY, accessToken);
-  localStorage.setItem(TOKEN_EXPIRY_KEY, String(expiry));
+  sessionStorage.setItem(TOKEN_KEY, accessToken);
+  sessionStorage.setItem(TOKEN_EXPIRY_KEY, String(expiry));
 }
 
 export function loadToken(): string | null {
-  // Check localStorage first
-  const token = localStorage.getItem(TOKEN_KEY);
-  const expiry = localStorage.getItem(TOKEN_EXPIRY_KEY);
+  const token = sessionStorage.getItem(TOKEN_KEY);
+  const expiry = sessionStorage.getItem(TOKEN_EXPIRY_KEY);
 
   if (token && expiry) {
     if (Date.now() > Number(expiry) - 5 * 60 * 1000) {
@@ -116,9 +115,8 @@ export function loadToken(): string | null {
   const cookieExpiry = getCookie(TOKEN_EXPIRY_KEY);
 
   if (cookieToken && cookieExpiry) {
-    // Sync to localStorage and clear cookies
-    localStorage.setItem(TOKEN_KEY, cookieToken);
-    localStorage.setItem(TOKEN_EXPIRY_KEY, cookieExpiry);
+    sessionStorage.setItem(TOKEN_KEY, cookieToken);
+    sessionStorage.setItem(TOKEN_EXPIRY_KEY, cookieExpiry);
     deleteCookie(TOKEN_KEY);
     deleteCookie(TOKEN_EXPIRY_KEY);
 
@@ -133,8 +131,8 @@ export function loadToken(): string | null {
 }
 
 export function clearToken(): void {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(TOKEN_EXPIRY_KEY);
+  sessionStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(TOKEN_EXPIRY_KEY);
 }
 
 export function isConnected(): boolean {
