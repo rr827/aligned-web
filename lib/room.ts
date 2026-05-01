@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { decodePayload } from './payload';
 
 export interface Proposal {
   proposer_index: number;
@@ -74,13 +75,31 @@ export async function getRoom(code: string): Promise<RoomRow | null> {
   return data as RoomRow;
 }
 
-export async function joinRoom(code: string, encodedPayload: string): Promise<RoomRow> {
+export async function joinRoom(
+  code: string,
+  encodedPayload: string
+): Promise<{ room: RoomRow; participantIndex: number }> {
   validatePayload(encodedPayload);
   const supabase = db();
   const room = await getRoom(code);
   if (!room) throw new Error('Room not found');
   if (room.participants.length >= MAX_PARTICIPANTS)
     throw new Error('Room is full');
+
+  // Duplicate detection: if incoming payload has a uid, check if it's already in the room
+  try {
+    const incoming = decodePayload(encodedPayload);
+    if (incoming.uid) {
+      const existingIdx = room.participants.findIndex((p) => {
+        try { return decodePayload(p).uid === incoming.uid; } catch { return false; }
+      });
+      if (existingIdx !== -1) {
+        return { room, participantIndex: existingIdx };
+      }
+    }
+  } catch {
+    // If decode fails, proceed normally
+  }
 
   const { data, error } = await supabase
     .from('rooms')
@@ -89,7 +108,7 @@ export async function joinRoom(code: string, encodedPayload: string): Promise<Ro
     .select()
     .single();
   if (error || !data) throw new Error(error?.message ?? 'Failed to join room');
-  return data as RoomRow;
+  return { room: data as RoomRow, participantIndex: (data as RoomRow).participants.length - 1 };
 }
 
 export async function proposeTime(
@@ -101,6 +120,12 @@ export async function proposeTime(
   const supabase = db();
   const room = await getRoom(code);
   if (!room) throw new Error('Room not found');
+
+  // Deduplicate: don't add an identical pending proposal
+  const duplicate = room.proposals.some(
+    (p) => p.start_time === startTime && p.end_time === endTime && p.status === 'pending'
+  );
+  if (duplicate) throw new Error('This time has already been proposed');
 
   const proposal: Proposal = {
     proposer_index: proposerIndex,

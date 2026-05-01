@@ -7,8 +7,8 @@ export async function POST(req: NextRequest) {
     if (!code || !payload) {
       return NextResponse.json({ error: 'Missing code or payload' }, { status: 400 });
     }
-    const room = await joinRoom(code, payload);
-    return NextResponse.json({ room });
+    const { room, participantIndex } = await joinRoom(code, payload);
+    return NextResponse.json({ room, participantIndex });
   } catch (err: any) {
     console.error('join room:', err);
     return NextResponse.json({ error: err.message ?? 'Failed to join room' }, { status: 500 });

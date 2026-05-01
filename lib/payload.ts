@@ -7,6 +7,8 @@ export interface AlignedPayload {
   sleep: { from: string; to: string } | null;
   preference: Preference | null;
   blocks: BusyBlock[];
+  uid?: string;          // stable random UUID for duplicate-join detection
+  displayName?: string;  // user-chosen display name (optional, privacy-controlled)
 }
 
 // ── V1 helpers (backwards compat — used by /overlap) ──────────────────────
@@ -59,6 +61,8 @@ export function encodePayload(payload: AlignedPayload): string {
       Math.floor(new Date(b.start).getTime() / 1000),
       Math.floor(new Date(b.end).getTime() / 1000),
     ]),
+    u: payload.uid ?? null,
+    dn: payload.displayName ?? null,
   };
   return b64encode(JSON.stringify(compact));
 }
@@ -67,16 +71,26 @@ export function decodePayload(encoded: string): AlignedPayload {
   try {
     const raw = JSON.parse(b64decode(encoded));
 
-    // V2 format
+    // V2 format — handles both compact keys (r,sl,p,b,u,dn) and mobile full-JSON keys (range,sleep,preference,blocks)
     if (raw?.v === 2) {
+      const range = raw.r
+        ? { start: raw.r.s, end: raw.r.e }
+        : (raw.range ?? { start: '', end: '' });
+      const sleep = raw.sl !== undefined ? raw.sl : (raw.sleep ?? null);
+      const preference = raw.p !== undefined ? raw.p : (raw.preference ?? null);
+      const blocks: BusyBlock[] = raw.b
+        ? (raw.b as number[][]).map(([s, e]) => ({
+            start: new Date(s * 1000).toISOString(),
+            end: new Date(e * 1000).toISOString(),
+          }))
+        : (raw.blocks ?? []);
       return {
-        range: { start: raw.r.s, end: raw.r.e },
-        sleep: raw.sl ?? null,
-        preference: raw.p ?? null,
-        blocks: (raw.b as number[][]).map(([s, e]) => ({
-          start: new Date(s * 1000).toISOString(),
-          end: new Date(e * 1000).toISOString(),
-        })),
+        range,
+        sleep,
+        preference,
+        blocks,
+        uid: raw.u ?? raw.uid ?? undefined,
+        displayName: raw.dn ?? raw.displayName ?? undefined,
       };
     }
 
