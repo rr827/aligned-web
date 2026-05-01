@@ -83,7 +83,7 @@ export default function WeekDemo() {
       }}>
         {/* Mini app header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <span style={{ fontSize: 16, fontWeight: 300, letterSpacing: '-0.06em', color: '#1a1a18' }}>aligned</span>
+          <span style={{ fontSize: 16, fontWeight: 300, letterSpacing: '-0.06em', color: '#1a1a18' }}>clearslot</span>
           <div style={{ backgroundColor: '#fff', border: '1px solid #e0e0d8', borderRadius: 7, padding: '3px 10px', fontSize: 12, color: '#888' }}>
             Room <span style={{ fontWeight: 700, letterSpacing: '0.1em', color: '#1a2e0a' }}>WTXPPS</span>
           </div>

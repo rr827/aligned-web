@@ -936,11 +936,11 @@ function RoomContent() {
           >×</button>
           <p style={{ color: '#c8f97a', fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', margin: '0 0 4px' }}>Get the app</p>
           <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 15, margin: '0 0 14px', lineHeight: 1.4 }}>
-            Open this room in the Aligned app for a better experience.
+            Open this room in the ClearSlot app for a better experience.
           </p>
           <div style={{ display: 'flex', gap: 10 }}>
             <a
-              href={`aligned://room?code=${code}`}
+              href={`clearslot://room?code=${code}`}
               style={{ flex: 1, backgroundColor: '#c8f97a', color: '#1a2e0a', fontSize: 15, fontWeight: 700, textAlign: 'center', padding: '11px 0', borderRadius: 10, textDecoration: 'none' }}
             >
               Open in App
@@ -959,7 +959,7 @@ function RoomContent() {
 
       {/* Header */}
       <div style={{ borderBottom: '1px solid #e2e2dc', padding: '0 28px', height: 54, display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
-        <span style={{ fontSize: 26, fontWeight: 300, letterSpacing: '-0.06em', color: '#1a1a18' }}>aligned</span>
+        <span style={{ fontSize: 26, fontWeight: 300, letterSpacing: '-0.06em', color: '#1a1a18' }}>clearslot</span>
 
         {/* Room code badge */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, backgroundColor: '#fff', border: '1px solid #e0e0d8', borderRadius: 10, padding: '5px 12px' }}>

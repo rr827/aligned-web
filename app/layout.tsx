@@ -12,13 +12,13 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'Aligned — Find time together',
+  title: 'ClearSlot — Find time together',
   description: 'Share your availability privately. Find when you are both free. No account required.',
   openGraph: {
-    title: 'Aligned',
+    title: 'ClearSlot',
     description: 'Find time together without the back and forth.',
-    url: 'https://getaligned.app',
-    siteName: 'Aligned',
+    url: 'https://clearslot.net',
+    siteName: 'ClearSlot',
   },
 };
 

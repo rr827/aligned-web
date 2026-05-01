@@ -10,7 +10,7 @@ export default class ErrorBoundary extends Component<
     this.state = { hasError: false };
   }
   static getDerivedStateFromError() { return { hasError: true }; }
-  componentDidCatch(error: Error) { console.error('[aligned] client error:', error); }
+  componentDidCatch(error: Error) { console.error('[clearslot] client error:', error); }
   render() {
     if (this.state.hasError) {
       return (

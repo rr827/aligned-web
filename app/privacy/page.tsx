@@ -15,7 +15,7 @@ export default function PrivacyPage() {
         justifyContent: 'space-between',
       }}>
         <a href="/" style={{ color: '#c8f97a', fontFamily: 'monospace', fontSize: '18px', textDecoration: 'none', letterSpacing: '0.05em' }}>
-          Aligned
+          ClearSlot
         </a>
         <a href="/" style={{ color: '#666', fontSize: '14px', textDecoration: 'none' }}>← Back</a>
       </nav>
@@ -39,12 +39,12 @@ export default function PrivacyPage() {
           Privacy Policy
         </h1>
         <p style={{ color: '#c8f97a', fontSize: '16px', marginBottom: '48px', fontFamily: 'monospace' }}>
-          We built Aligned so we never have to ask you to trust us with your data, because we never see it.
+          We built ClearSlot so we never have to ask you to trust us with your data, because we never see it.
         </p>
 
         <Section title="The short version">
           <p>
-            Aligned shows you and a friend when you are both free, without either of you ever sharing what you are actually doing. Your calendar events are never sent to our servers. We never see event titles, attendees, locations, or descriptions. We receive nothing except a temporary token that lets your device read your own calendar, and that token stays on your device.
+            ClearSlot shows you and a friend when you are both free, without either of you ever sharing what you are actually doing. Your calendar events are never sent to our servers. We never see event titles, attendees, locations, or descriptions. We receive nothing except a temporary token that lets your device read your own calendar, and that token stays on your device.
           </p>
         </Section>
 
@@ -52,17 +52,17 @@ export default function PrivacyPage() {
           <p>We collect essentially nothing. Here is the complete list:</p>
           <ul>
             <li>
-              <strong style={{ color: '#c8f97a' }}>Google OAuth token:</strong> A temporary access token that allows the app on your device to read your Google Calendar. This token is stored locally on your device only, using encrypted storage. It is never transmitted to Aligned servers.
+              <strong style={{ color: '#c8f97a' }}>Google OAuth token:</strong> A temporary access token that allows the app on your device to read your Google Calendar. This token is stored locally on your device only, using encrypted storage. It is never transmitted to ClearSlot servers.
             </li>
             <li>
-              <strong style={{ color: '#c8f97a' }}>Availability payload:</strong> When you share your availability, your device computes a busy/free block summary (no event details, no titles, no metadata) and encodes it. This encoded data is shared with room participants only. Aligned servers store it temporarily (up to 48 hours) solely to enable the room feature, then it expires automatically.
+              <strong style={{ color: '#c8f97a' }}>Availability payload:</strong> When you share your availability, your device computes a busy/free block summary (no event details, no titles, no metadata) and encodes it. This encoded data is shared with room participants only. ClearSlot servers store it temporarily (up to 48 hours) solely to enable the room feature, then it expires automatically.
             </li>
           </ul>
           <p>We collect no names, no email addresses, no device identifiers, no location data, and no analytics by default.</p>
         </Section>
 
         <Section title="What we do not collect">
-          <p>To be explicit, Aligned never collects or processes:</p>
+          <p>To be explicit, ClearSlot never collects or processes:</p>
           <ul>
             <li>Calendar event titles or descriptions</li>
             <li>Event attendees or organizers</li>
@@ -91,7 +91,7 @@ export default function PrivacyPage() {
 
         <Section title="Google OAuth and third parties">
           <p>
-            Aligned uses Google OAuth to access your Google Calendar. This means Google is the only third party involved. When you connect your calendar, you are authorizing Aligned to read your calendar on your behalf, under Google&apos;s standard OAuth scopes. We request read-only access.
+            ClearSlot uses Google OAuth to access your Google Calendar. This means Google is the only third party involved. When you connect your calendar, you are authorizing ClearSlot to read your calendar on your behalf, under Google&apos;s standard OAuth scopes. We request read-only access.
           </p>
           <p>
             Google&apos;s privacy policy governs their handling of the OAuth authorization process. You can review it at <a href="https://policies.google.com/privacy" style={{ color: '#c8f97a' }}>policies.google.com/privacy</a>.
@@ -103,10 +103,10 @@ export default function PrivacyPage() {
 
         <Section title="Revoking access">
           <p>
-            You can disconnect Aligned from your Google Calendar at any time in two ways:
+            You can disconnect ClearSlot from your Google Calendar at any time in two ways:
           </p>
           <ul>
-            <li>In the Aligned app: Settings → Disconnect Google Calendar</li>
+            <li>In the ClearSlot app: Settings → Disconnect Google Calendar</li>
             <li>Directly in your Google account: <a href="https://myaccount.google.com/permissions" style={{ color: '#c8f97a' }}>myaccount.google.com/permissions</a></li>
           </ul>
           <p>
@@ -122,20 +122,20 @@ export default function PrivacyPage() {
 
         <Section title="Children">
           <p>
-            Aligned is not directed at children under 13. We do not knowingly collect any information from children under 13. If you believe a child has used Aligned and you have concerns, contact us at the address below.
+            ClearSlot is not directed at children under 13. We do not knowingly collect any information from children under 13. If you believe a child has used ClearSlot and you have concerns, contact us at the address below.
           </p>
         </Section>
 
         <Section title="Changes to this policy">
           <p>
-            If we make material changes to this privacy policy, we will update the date at the top of this page. We encourage you to review this page periodically. Continued use of Aligned after changes constitutes acceptance of the updated policy.
+            If we make material changes to this privacy policy, we will update the date at the top of this page. We encourage you to review this page periodically. Continued use of ClearSlot after changes constitutes acceptance of the updated policy.
           </p>
         </Section>
 
         <Section title="Contact">
           <p>
             Questions about this privacy policy? Reach us at:{' '}
-            <a href="mailto:privacy@aligned.app" style={{ color: '#c8f97a' }}>privacy@aligned.app</a>
+            <a href="mailto:privacy@clearslot.net" style={{ color: '#c8f97a' }}>privacy@clearslot.net</a>
           </p>
         </Section>
       </div>

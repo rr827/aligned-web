@@ -7,7 +7,7 @@ export default function Home() {
       {/* Nav */}
       <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, borderBottom: '1px solid rgba(255,255,255,0.05)', backgroundColor: 'rgba(10,10,10,0.8)', backdropFilter: 'blur(12px)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 48px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 32, fontWeight: 300, letterSpacing: '-0.08em' }}>aligned</span>
+          <span style={{ fontSize: 32, fontWeight: 300, letterSpacing: '-0.08em' }}>clearslot</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
             <a href="#how" style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>How it works</a>
             <a href="#privacy" style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>Privacy</a>
@@ -115,12 +115,12 @@ export default function Home() {
       {/* Footer */}
       <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '32px 0' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 48px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 18, fontWeight: 300, letterSpacing: '-0.05em', color: 'rgba(255,255,255,0.3)' }}>aligned</span>
+          <span style={{ fontSize: 18, fontWeight: 300, letterSpacing: '-0.05em', color: 'rgba(255,255,255,0.3)' }}>clearslot</span>
           <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
             <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>No data collected. No accounts. Just time.</p>
             <a href="/privacy" style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', textDecoration: 'none' }}>Privacy Policy</a>
             <a href="/terms" style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', textDecoration: 'none' }}>Terms</a>
-            <a href="mailto:support@aligned.app" style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', textDecoration: 'none' }}>Contact</a>
+            <a href="mailto:support@clearslot.net" style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', textDecoration: 'none' }}>Contact</a>
           </div>
         </div>
       </footer>

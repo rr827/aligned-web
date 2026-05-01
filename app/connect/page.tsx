@@ -87,7 +87,7 @@ function ConnectContent() {
 
       {/* Header */}
       <div style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, backgroundColor: '#f5f5f0', zIndex: 10 }}>
-        <span style={{ fontSize: 20, fontWeight: 300, letterSpacing: '-0.06em', color: '#1a1a18' }}>aligned</span>
+        <span style={{ fontSize: 20, fontWeight: 300, letterSpacing: '-0.06em', color: '#1a1a18' }}>clearslot</span>
         <button onClick={skipAll} style={{ fontSize: 13, color: '#888', background: 'none', border: 'none', cursor: 'pointer' }}>
           Skip all →
         </button>

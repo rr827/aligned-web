@@ -129,7 +129,7 @@ export default function HomePage() {
 
       {/* Header */}
       <div style={{ borderBottom: '1px solid #e2e2dc', padding: '0 32px', height: 54, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, gap: 16 }}>
-        <span style={{ fontSize: 21, fontWeight: 300, letterSpacing: '-0.06em', flexShrink: 0 }}>aligned</span>
+        <span style={{ fontSize: 21, fontWeight: 300, letterSpacing: '-0.06em', flexShrink: 0 }}>clearslot</span>
 
         {/* View mode tabs */}
         <div style={{ display: 'flex', gap: 2, backgroundColor: '#ffffff', border: '1px solid #1a1a1a', borderRadius: 9, padding: 3 }}>
