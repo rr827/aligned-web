@@ -801,6 +801,13 @@ function RoomContent() {
   const [proposed, setProposed] = useState(false);
   const [copied, setCopied] = useState(false);
   const [acceptingIdx, setAcceptingIdx] = useState<number | null>(null);
+  const [showAppBanner, setShowAppBanner] = useState(false);
+
+  useEffect(() => {
+    const ua = navigator.userAgent;
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(ua);
+    if (isMobile) setShowAppBanner(true);
+  }, []);
 
   // Manual time entry
   const [manualDate, setManualDate] = useState('');
@@ -918,6 +925,37 @@ function RoomContent() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f0', display: 'flex', flexDirection: 'column', fontFamily: 'system-ui, sans-serif', color: '#111' }}>
+
+      {/* Mobile app download banner */}
+      {showAppBanner && (
+        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100, backgroundColor: '#1a2e0a', padding: '16px 20px 32px', boxShadow: '0 -4px 24px rgba(0,0,0,0.18)' }}>
+          <button
+            onClick={() => setShowAppBanner(false)}
+            style={{ position: 'absolute', top: 12, right: 16, background: 'none', border: 'none', color: 'rgba(200,249,122,0.5)', fontSize: 20, cursor: 'pointer', lineHeight: 1, padding: 4 }}
+            aria-label="Dismiss"
+          >×</button>
+          <p style={{ color: '#c8f97a', fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', margin: '0 0 4px' }}>Get the app</p>
+          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 15, margin: '0 0 14px', lineHeight: 1.4 }}>
+            Open this room in the Aligned app for a better experience.
+          </p>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <a
+              href={`aligned://room?code=${code}`}
+              style={{ flex: 1, backgroundColor: '#c8f97a', color: '#1a2e0a', fontSize: 15, fontWeight: 700, textAlign: 'center', padding: '11px 0', borderRadius: 10, textDecoration: 'none' }}
+            >
+              Open in App
+            </a>
+            <a
+              href="https://apps.apple.com/app/idYOUR_APP_ID"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ flex: 1, backgroundColor: 'rgba(200,249,122,0.12)', color: '#c8f97a', fontSize: 15, fontWeight: 600, textAlign: 'center', padding: '11px 0', borderRadius: 10, textDecoration: 'none', border: '1px solid rgba(200,249,122,0.25)' }}
+            >
+              Download ↗
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div style={{ borderBottom: '1px solid #e2e2dc', padding: '0 28px', height: 54, display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
