@@ -1027,7 +1027,7 @@ function RoomContent() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {room.proposals.map((prop, i) => {
                   const isAccepted = prop.status === 'accepted';
-                  const canAccept = prop.status === 'pending' && myIndex !== null && prop.proposer_index !== myIndex;
+                  const canAccept = prop.status === 'pending' && (myIndex === null || prop.proposer_index !== myIndex);
                   const hasToken = !!loadToken();
                   return (
                     <div key={i} style={{ padding: '10px 12px', borderRadius: 9, backgroundColor: isAccepted ? 'rgba(74,128,0,0.06)' : '#fff', border: `1px solid ${isAccepted ? 'rgba(74,128,0,0.2)' : '#e0e0d8'}` }}>
