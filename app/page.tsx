@@ -119,6 +119,8 @@ export default function Home() {
           <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
             <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>No data collected. No accounts. Just time.</p>
             <a href="/privacy" style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', textDecoration: 'none' }}>Privacy Policy</a>
+            <a href="/terms" style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', textDecoration: 'none' }}>Terms</a>
+            <a href="mailto:support@aligned.app" style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', textDecoration: 'none' }}>Contact</a>
           </div>
         </div>
       </footer>

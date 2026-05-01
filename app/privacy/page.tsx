@@ -1,75 +1,168 @@
-export default function PrivacyPolicy() {
+export default function PrivacyPage() {
   return (
-    <main style={{ minHeight: '100vh', backgroundColor: '#0a0a0a', color: 'white', fontFamily: 'system-ui, sans-serif' }}>
-
+    <main style={{
+      backgroundColor: '#080808',
+      minHeight: '100vh',
+      color: '#e8e8e8',
+      fontFamily: "'Georgia', serif",
+    }}>
       {/* Nav */}
-      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, borderBottom: '1px solid rgba(255,255,255,0.05)', backgroundColor: 'rgba(10,10,10,0.8)', backdropFilter: 'blur(12px)' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 48px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <a href="/" style={{ fontSize: 32, fontWeight: 300, letterSpacing: '-0.08em', color: 'white', textDecoration: 'none' }}>aligned</a>
-        </div>
+      <nav style={{
+        padding: '20px 40px',
+        borderBottom: '1px solid #1a1a1a',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}>
+        <a href="/" style={{ color: '#c8f97a', fontFamily: 'monospace', fontSize: '18px', textDecoration: 'none', letterSpacing: '0.05em' }}>
+          Aligned
+        </a>
+        <a href="/" style={{ color: '#666', fontSize: '14px', textDecoration: 'none' }}>← Back</a>
       </nav>
 
       {/* Content */}
-      <div style={{ maxWidth: 720, margin: '0 auto', padding: '120px 48px 96px' }}>
+      <div style={{
+        maxWidth: '720px',
+        margin: '0 auto',
+        padding: '60px 40px 100px',
+      }}>
+        <p style={{ color: '#666', fontSize: '13px', fontFamily: 'monospace', marginBottom: '12px' }}>
+          Last updated: May 1, 2026
+        </p>
+        <h1 style={{
+          fontSize: '38px',
+          fontWeight: '400',
+          color: '#ffffff',
+          marginBottom: '16px',
+          lineHeight: '1.2',
+        }}>
+          Privacy Policy
+        </h1>
+        <p style={{ color: '#c8f97a', fontSize: '16px', marginBottom: '48px', fontFamily: 'monospace' }}>
+          We built Aligned so we never have to ask you to trust us with your data, because we never see it.
+        </p>
 
-        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 16 }}>Legal</p>
-        <h1 style={{ fontSize: 48, fontWeight: 300, letterSpacing: '-0.02em', marginBottom: 12 }}>Privacy Policy</h1>
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.3)', marginBottom: 64 }}>Effective date: April 21, 2026</p>
+        <Section title="The short version">
+          <p>
+            Aligned shows you and a friend when you are both free, without either of you ever sharing what you are actually doing. Your calendar events are never sent to our servers. We never see event titles, attendees, locations, or descriptions. We receive nothing except a temporary token that lets your device read your own calendar, and that token stays on your device.
+          </p>
+        </Section>
 
-        {[
-          {
-            title: 'What aligned does',
-            body: `aligned is a scheduling tool that helps people find a meeting time that works for everyone. You connect your Google Calendar, your busy times are stripped down to start and end times only, and that anonymized data is shared temporarily in a room with the people you invite. No names, no event titles, no descriptions — just blocks of time.`,
-          },
-          {
-            title: 'What we collect',
-            body: `We do not collect personal information. We do not have user accounts. When you connect your Google Calendar, we request read access to your calendar events solely to extract busy time ranges. We never store event titles, descriptions, attendees, locations, or any other event metadata on our servers. The only data we store is a room record containing: a random 6-character room code, an expiry timestamp (48 hours from creation), anonymized busy-time blocks (start and end times only), and meeting proposals made within the room.`,
-          },
-          {
-            title: 'How your Google data is used',
-            body: `aligned uses the Google Calendar API to read your calendar events and identify when you are busy. This data is used only to generate anonymous busy-time blocks that are shared within your room session. We do not store, sell, transfer, or use your Google Calendar data for any purpose other than displaying your availability within the room you created or joined. Your Google access token is stored only in your browser's session storage and is deleted when you close the tab.`,
-          },
-          {
-            title: 'Data storage and retention',
-            body: `Room data is stored in our database for a maximum of 48 hours, after which it is automatically deleted. We do not retain logs of who created or joined a room. We do not link room data to any identity. Because we store no personal information, there is nothing to delete on request — your data expires automatically.`,
-          },
-          {
-            title: 'Third-party services',
-            body: `aligned uses Supabase to store temporary room data and Google OAuth 2.0 (with PKCE) for calendar access. We do not use advertising networks, tracking pixels, or analytics that identify individual users. We do not share any data with third parties for marketing purposes.`,
-          },
-          {
-            title: 'Google API scopes',
-            body: `aligned requests the following Google OAuth scopes: openid and profile (to confirm authentication), email (required by Google's OAuth flow), calendar.readonly (to read your events and generate busy blocks), and calendar.events (to add an agreed meeting time to your calendar when you choose to). We do not access, store, or transmit any calendar data beyond what is necessary to show your busy times within your active session.`,
-          },
-          {
-            title: 'Children',
-            body: `aligned is not directed at children under 13 and we do not knowingly collect any information from children.`,
-          },
-          {
-            title: 'Changes to this policy',
-            body: `If we make material changes to this policy, we will update the effective date above. Continued use of aligned after changes constitutes acceptance of the updated policy.`,
-          },
-          {
-            title: 'Contact',
-            body: `If you have questions about this privacy policy, you can reach us at privacy@getaligned.app.`,
-          },
-        ].map((section) => (
-          <div key={section.title} style={{ marginBottom: 48 }}>
-            <h2 style={{ fontSize: 20, fontWeight: 500, marginBottom: 12, color: '#c8f97a' }}>{section.title}</h2>
-            <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.55)', lineHeight: 1.8 }}>{section.body}</p>
-          </div>
-        ))}
+        <Section title="What we collect">
+          <p>We collect essentially nothing. Here is the complete list:</p>
+          <ul>
+            <li>
+              <strong style={{ color: '#c8f97a' }}>Google OAuth token:</strong> A temporary access token that allows the app on your device to read your Google Calendar. This token is stored locally on your device only, using encrypted storage. It is never transmitted to Aligned servers.
+            </li>
+            <li>
+              <strong style={{ color: '#c8f97a' }}>Availability payload:</strong> When you share your availability, your device computes a busy/free block summary (no event details, no titles, no metadata) and encodes it. This encoded data is shared with room participants only. Aligned servers store it temporarily (up to 48 hours) solely to enable the room feature, then it expires automatically.
+            </li>
+          </ul>
+          <p>We collect no names, no email addresses, no device identifiers, no location data, and no analytics by default.</p>
+        </Section>
 
+        <Section title="What we do not collect">
+          <p>To be explicit, Aligned never collects or processes:</p>
+          <ul>
+            <li>Calendar event titles or descriptions</li>
+            <li>Event attendees or organizers</li>
+            <li>Event locations</li>
+            <li>Recurring event patterns</li>
+            <li>Any personally identifiable information from your calendar</li>
+            <li>Your name or email address</li>
+            <li>Device identifiers or advertising IDs</li>
+            <li>Location or IP address logs</li>
+          </ul>
+        </Section>
+
+        <Section title="How the availability payload works">
+          <p>
+            When you share your availability, the following happens entirely on your device:
+          </p>
+          <ol>
+            <li>Your device reads your Google Calendar using the OAuth token stored locally.</li>
+            <li>Event details are immediately discarded. Only busy/free blocks (time ranges with no other information) are retained.</li>
+            <li>These blocks are encoded into a Base64 string.</li>
+            <li>You create or join a room. The encoded blocks are stored temporarily in our database (up to 48 hours) so your co-participants can see mutual availability.</li>
+            <li>The overlap computation happens in the browser or app — never on our servers.</li>
+            <li>Room data expires automatically after 48 hours and is deleted.</li>
+          </ol>
+        </Section>
+
+        <Section title="Google OAuth and third parties">
+          <p>
+            Aligned uses Google OAuth to access your Google Calendar. This means Google is the only third party involved. When you connect your calendar, you are authorizing Aligned to read your calendar on your behalf, under Google&apos;s standard OAuth scopes. We request read-only access.
+          </p>
+          <p>
+            Google&apos;s privacy policy governs their handling of the OAuth authorization process. You can review it at <a href="https://policies.google.com/privacy" style={{ color: '#c8f97a' }}>policies.google.com/privacy</a>.
+          </p>
+          <p>
+            We do not sell, share, rent, or otherwise transmit any data to any third party beyond the Google OAuth process described above.
+          </p>
+        </Section>
+
+        <Section title="Revoking access">
+          <p>
+            You can disconnect Aligned from your Google Calendar at any time in two ways:
+          </p>
+          <ul>
+            <li>In the Aligned app: Settings → Disconnect Google Calendar</li>
+            <li>Directly in your Google account: <a href="https://myaccount.google.com/permissions" style={{ color: '#c8f97a' }}>myaccount.google.com/permissions</a></li>
+          </ul>
+          <p>
+            Revoking access removes the OAuth token from your device. Any room data in our database expires automatically within 48 hours.
+          </p>
+        </Section>
+
+        <Section title="Data retention">
+          <p>
+            Room availability payloads are stored for up to 48 hours, then automatically deleted. OAuth tokens are stored only on your device and deleted when you disconnect your calendar or uninstall the app. We retain no other user data.
+          </p>
+        </Section>
+
+        <Section title="Children">
+          <p>
+            Aligned is not directed at children under 13. We do not knowingly collect any information from children under 13. If you believe a child has used Aligned and you have concerns, contact us at the address below.
+          </p>
+        </Section>
+
+        <Section title="Changes to this policy">
+          <p>
+            If we make material changes to this privacy policy, we will update the date at the top of this page. We encourage you to review this page periodically. Continued use of Aligned after changes constitutes acceptance of the updated policy.
+          </p>
+        </Section>
+
+        <Section title="Contact">
+          <p>
+            Questions about this privacy policy? Reach us at:{' '}
+            <a href="mailto:privacy@aligned.app" style={{ color: '#c8f97a' }}>privacy@aligned.app</a>
+          </p>
+        </Section>
       </div>
-
-      {/* Footer */}
-      <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '32px 0' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 48px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 18, fontWeight: 300, letterSpacing: '-0.05em', color: 'rgba(255,255,255,0.3)' }}>aligned</span>
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>No data collected. No accounts. Just time.</p>
-        </div>
-      </footer>
-
     </main>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section style={{ marginBottom: '48px' }}>
+      <h2 style={{
+        fontSize: '20px',
+        fontWeight: '600',
+        color: '#ffffff',
+        marginBottom: '16px',
+        fontFamily: 'monospace',
+        letterSpacing: '0.02em',
+      }}>
+        {title}
+      </h2>
+      <div style={{
+        color: '#aaa',
+        lineHeight: '1.8',
+        fontSize: '16px',
+      }}>
+        {children}
+      </div>
+    </section>
   );
 }
