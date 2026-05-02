@@ -37,6 +37,19 @@ export default function Home() {
             </a>
             <a href="#how" style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>See how it works →</a>
           </div>
+
+          <form action="/connect" method="get" style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 16 }}>
+            <input
+              name="room"
+              type="text"
+              placeholder="Have a room code? Enter it"
+              maxLength={6}
+              style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 999, padding: '12px 20px', fontSize: 14, color: 'white', outline: 'none', width: 260 }}
+            />
+            <button type="submit" style={{ backgroundColor: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 999, padding: '12px 20px', fontSize: 14, color: 'rgba(255,255,255,0.6)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              Join →
+            </button>
+          </form>
         </div>
 
         {/* Live demo */}
