@@ -801,6 +801,7 @@ function RoomContent() {
   const [proposed, setProposed] = useState(false);
   const [copied, setCopied] = useState(false);
   const [acceptingIdx, setAcceptingIdx] = useState<number | null>(null);
+  const [addedToCalIdx, setAddedToCalIdx] = useState<number | null>(null);
   const [showAppBanner, setShowAppBanner] = useState(false);
 
   useEffect(() => {
@@ -1076,15 +1077,27 @@ function RoomContent() {
                       {isAccepted ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                           <span style={{ fontSize: 14, color: '#4a8000', fontWeight: 600 }}>✓ Accepted</span>
-                          {hasToken && (
+                          {addedToCalIdx === i ? (
+                            <span style={{ fontSize: 14, color: '#4a8000', fontWeight: 500 }}>✓ Added to Google Calendar</span>
+                          ) : hasToken ? (
                             <button
-                              onClick={() => {
+                              onClick={async () => {
                                 const token = loadToken();
-                                if (token) createCalendarEvent(token, 'Meeting', new Date(prop.start_time), new Date(prop.end_time)).catch(() => alert('Could not add to calendar.'));
+                                if (!token) { alert('Your session expired. Reconnect your calendar to add events.'); return; }
+                                try {
+                                  await createCalendarEvent(token, 'Meeting', new Date(prop.start_time), new Date(prop.end_time));
+                                  setAddedToCalIdx(i);
+                                } catch {
+                                  alert('Could not add to calendar. Your session may have expired — try reconnecting.');
+                                }
                               }}
                               style={{ fontSize: 14, color: '#4a8000', background: 'none', border: '1px solid #4a8000', borderRadius: 7, padding: '5px 10px', cursor: 'pointer', fontWeight: 500 }}>
-                              Add to calendar
+                              Add to Google Calendar
                             </button>
+                          ) : (
+                            <a href={`/connect?room=${code}`} style={{ fontSize: 14, color: '#4a8000', fontWeight: 500, textDecoration: 'underline' }}>
+                              Connect Google Calendar to add this event
+                            </a>
                           )}
                         </div>
                       ) : canAccept ? (
